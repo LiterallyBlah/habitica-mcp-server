@@ -95,8 +95,8 @@ The server follows the MCP spec and works with any AI client that supports MCP. 
 {
   "mcpServers": {
     "habitica-mcp-server": {
-      "command": "node",
-      "args": ["/absolute/path/to/index.js"],
+      "command": "npx",
+      "args": ["-y", "habitica-mcp-server"],
       "env": {
         "HABITICA_USER_ID": "your-id",
         "HABITICA_API_TOKEN": "your-token",
