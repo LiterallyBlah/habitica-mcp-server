@@ -112,7 +112,7 @@ The server follows the MCP spec and works with any AI client that supports MCP. 
 User: "Create a habit for learning Python"
 AI:   "Sure, the habit has been created!"
 
-User: "Show me today’s tasks"
+User: "Show me today's tasks"
 AI:   "Here is your task list for today…"
 
 User: "I finished my workout, please record it"
@@ -121,14 +121,173 @@ AI:   "Great job! The workout is logged."
 
 ## 🛠️ Available Tools
 
-(Identical to the Chinese README – see README.zh-CN.md for the full list.)
+### User Related
+- `get_user_profile`: Get user profile information
+- `get_stats`: Get user statistics
+- `get_inventory`: Get inventory list
+
+### Task Management
+- `get_tasks`: Get task list (can specify type: habits, dailys, todos, rewards)
+- `create_task`: Create new task
+- `update_task`: Update task
+- `delete_task`: Delete task
+- `score_task`: Complete task or record habit
+
+### Tag Management
+- `get_tags`: Get tag list
+- `create_tag`: Create new tag
+
+### Pets and Mounts
+- `get_pets`: Get pet list
+- `feed_pet`: Feed pet
+- `hatch_pet`: Hatch pet
+- `get_mounts`: Get mount list
+- `equip_item`: Equip pet, mount or equipment
+
+### Shop and Purchases
+- `get_shop`: Get shop item list
+- `buy_item`: Buy shop item
+- `buy_reward`: Buy reward
+
+### Notification Management
+- `get_notifications`: Get notification list
+- `read_notification`: Mark notification as read
+
+### Skill System
+- `cast_spell`: Cast spell
+
+## 📖 API Usage Examples
+
+### Create Task
+```json
+{
+  "type": "todo",
+  "text": "Complete project documentation",
+  "notes": "Including API docs and user guide",
+  "difficulty": 1.5,
+  "priority": 2
+}
+```
+
+### Complete Task
+```json
+{
+  "taskId": "task-id-here",
+  "direction": "up"
+}
+```
+
+### Get Specific Task Type
+```json
+{
+  "type": "todos"
+}
+```
+
+### Pet Management
+```json
+{
+  "pet": "Wolf-Base",
+  "food": "Meat"
+}
+```
+
+### Buy Item
+```json
+{
+  "itemKey": "armor_warrior_1",
+  "quantity": 1
+}
+```
+
+## Task Types
+
+- `habit`: Habit (can be recorded positively or negatively)
+- `daily`: Daily task (resets every day)
+- `todo`: To-do item (one-time task)
+- `reward`: Reward (can be purchased with gold)
+
+## Difficulty Levels
+
+- `0.1`: Easy
+- `1`: Medium
+- `1.5`: Hard
+- `2`: Extreme
+
+## Priority Levels
+
+- `0.1`: Low
+- `1`: Medium
+- `1.5`: High
+- `2`: Extreme
 
 ## 🔧 Troubleshooting
 
-Common issues and solutions mirror the Chinese documentation – refer to README.zh-CN.md if you need more detail.
+### Common Issues
 
-## 📝 License
+**Issue**: Server startup failed
+```
+Solution: 
+1. Check Node.js version is 18+
+2. Confirm environment variables are set correctly
+3. Verify API credentials are valid
+```
 
-MIT © Breaker
+**Issue**: API call failed
+```
+Solution:
+1. Check network connection
+2. Verify Habitica API credentials
+3. Confirm API rate limits haven't been exceeded
+```
+
+**Issue**: Task or pet not found
+```
+Solution:
+1. Confirm task ID is correct
+2. Check if task exists in Habitica
+3. Verify user permissions
+```
+
+### Debug Mode
+```bash
+# Enable verbose logging
+DEBUG=* npm start
+```
+
+### Get Help
+- 📚 Check [Habitica API Documentation](https://habitica.com/apidoc/)
+- 🐛 Submit [Issues](https://github.com/ibreaker/habitica-mcp-server/issues)
+
+## 🤝 Contributing
+
+We welcome all forms of contributions!
+
+### How to Contribute
+1. Fork this project
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Create Pull Request
+
+### Development Guidelines
+- Follow existing code style
+- Add appropriate tests
+- Update relevant documentation
+- Ensure all tests pass
+
+## 📄 License
+
+This project is open source under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🌟 Acknowledgments
+
+- Thanks to [Habitica](https://habitica.com) for providing an excellent API
+- Thanks to [Anthropic](https://anthropic.com) for the MCP protocol
+- Thanks to all contributors and users for their support
 
 ---
+
+<div align="center">
+  <b>Let AI become your Habitica task management assistant!</b>
+</div>

@@ -37,8 +37,8 @@
 
 1. **克隆项目**
 ```bash
-git clone <repository-url>
-cd habictica
+git clone https://github.com/ibreaker/habitica-mcp-server.git
+cd habitica-mcp-server
 ```
 
 2. **安装依赖**
@@ -99,11 +99,12 @@ npm run dev
 {
   "mcpServers": {
     "habitica-mcp-server": {
-      "command": "npx",
-      "args": ["-y", "habitica-mcp-server"],
+      "command": "node",
+      "args": ["/absolute/path/to/index.js"],
       "env": {
-        "HABITICA_USER_ID": "your-habitica-user-id",
-        "HABITICA_API_TOKEN": "your-habitica-api-token"
+        "HABITICA_USER_ID": "your-id",
+        "HABITICA_API_TOKEN": "your-token",
+        "MCP_LANG": "zh-CN"  // or en
       }
     }
   }
