@@ -1,0 +1,61 @@
+{
+  "name": "habitica-mcp-server",
+  "version": "0.0.1",
+  "description": "Model Context Protocol server for Habitica API integration. Enable AI assistants to manage your Habitica tasks, habits, pets, and rewards through natural language.",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "habitica-mcp-server": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "echo \"No tests specified\" && exit 0",
+    "publish-check": "node scripts/publish-check.js",
+    "prepublishOnly": "npm run publish-check"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "axios": "^1.6.0",
+    "zod": "^3.22.0"
+  },
+  "keywords": [
+    "mcp",
+    "habitica", 
+    "productivity",
+    "habits",
+    "ai",
+    "task-management",
+    "rpg",
+    "model-context-protocol",
+    "claude",
+    "assistant",
+    "automation",
+    "gamification"
+  ],
+  "author": {
+    "name": "Breaker",
+    "email": "breakerr@qq.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/ibreaker/habitica-mcp-server#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ibreaker/habitica-mcp-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ibreaker/habitica-mcp-server/issues"
+  },
+  "files": [
+    "index.js",
+    "README.md",
+    "LICENSE",
+    "FEATURES.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+} 
