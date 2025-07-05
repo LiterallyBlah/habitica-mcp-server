@@ -10,6 +10,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import axios from 'axios';
 import { z } from 'zod';
+import { setLanguage, t } from './i18n.js';
 
 // Habitica API 基础配置
 const HABITICA_API_BASE = 'https://habitica.com/api/v3';
@@ -18,8 +19,11 @@ const HABITICA_API_BASE = 'https://habitica.com/api/v3';
 const HABITICA_USER_ID = process.env.HABITICA_USER_ID;
 const HABITICA_API_TOKEN = process.env.HABITICA_API_TOKEN;
 
+// Detect language (default EN)
+setLanguage(process.env.MCP_LANG || process.env.LANG || 'en');
+
 if (!HABITICA_USER_ID || !HABITICA_API_TOKEN) {
-  console.error('错误: 请设置 HABITICA_USER_ID 和 HABITICA_API_TOKEN 环境变量');
+  console.error(t('Error: Please set HABITICA_USER_ID and HABITICA_API_TOKEN environment variables', '错误: 请设置 HABITICA_USER_ID 和 HABITICA_API_TOKEN 环境变量'));
   process.exit(1);
 }
 
@@ -37,7 +41,7 @@ const habiticaClient = axios.create({
 const server = new Server(
   {
     name: 'habitica-mcp-server',
-    version: '1.0.0',
+    version: '0.0.1',
   },
   {
     capabilities: {
@@ -50,7 +54,7 @@ const server = new Server(
 const tools = [
   {
     name: 'get_user_profile',
-    description: '获取用户档案信息',
+    description: t('Get user profile', '获取用户档案信息'),
     inputSchema: {
       type: 'object',
       properties: {},
@@ -58,46 +62,46 @@ const tools = [
   },
   {
     name: 'get_tasks',
-    description: '获取任务列表',
+    description: t('Get tasks list', '获取任务列表'),
     inputSchema: {
       type: 'object',
       properties: {
         type: {
           type: 'string',
           enum: ['habits', 'dailys', 'todos', 'rewards'],
-          description: '任务类型',
+          description: t('Task type', '任务类型'),
         },
       },
     },
   },
   {
     name: 'create_task',
-    description: '创建新任务',
+    description: t('Create new task', '创建新任务'),
     inputSchema: {
       type: 'object',
       properties: {
         type: {
           type: 'string',
           enum: ['habit', 'daily', 'todo', 'reward'],
-          description: '任务类型',
+          description: t('Task type', '任务类型'),
         },
         text: {
           type: 'string',
-          description: '任务标题',
+          description: t('Task title', '任务标题'),
         },
         notes: {
           type: 'string',
-          description: '任务备注',
+          description: t('Task notes', '任务备注'),
         },
         difficulty: {
           type: 'number',
           enum: [0.1, 1, 1.5, 2],
-          description: '难度 (0.1=简单, 1=中等, 1.5=困难, 2=极难)',
+          description: t('Difficulty (0.1=easy, 1=medium, 1.5=hard, 2=very hard)', '难度 (0.1=简单, 1=中等, 1.5=困难, 2=极难)'),
         },
         priority: {
           type: 'number',
           enum: [0.1, 1, 1.5, 2],
-          description: '优先级 (0.1=低, 1=中, 1.5=高, 2=极高)',
+          description: t('Priority (0.1=low, 1=med, 1.5=high, 2=urgent)', '优先级 (0.1=低, 1=中, 1.5=高, 2=极高)'),
         },
       },
       required: ['type', 'text'],
@@ -105,18 +109,18 @@ const tools = [
   },
   {
     name: 'score_task',
-    description: '完成任务或记录习惯',
+    description: t('Score task / habit', '完成任务或记录习惯'),
     inputSchema: {
       type: 'object',
       properties: {
         taskId: {
           type: 'string',
-          description: '任务ID',
+          description: t('Task ID', '任务ID'),
         },
         direction: {
           type: 'string',
           enum: ['up', 'down'],
-          description: '方向 (up=正向, down=负向，仅适用于习惯)',
+          description: t('Direction (up=positive, down=negative, habits only)', '方向 (up=正向, down=负向，仅适用于习惯)'),
         },
       },
       required: ['taskId'],
@@ -124,25 +128,25 @@ const tools = [
   },
   {
     name: 'update_task',
-    description: '更新任务',
+    description: t('Update task', '更新任务'),
     inputSchema: {
       type: 'object',
       properties: {
         taskId: {
           type: 'string',
-          description: '任务ID',
+          description: t('Task ID', '任务ID'),
         },
         text: {
           type: 'string',
-          description: '任务标题',
+          description: t('Task title', '任务标题'),
         },
         notes: {
           type: 'string',
-          description: '任务备注',
+          description: t('Task notes', '任务备注'),
         },
         completed: {
           type: 'boolean',
-          description: '是否完成',
+          description: t('Completed flag', '是否完成'),
         },
       },
       required: ['taskId'],
@@ -150,13 +154,13 @@ const tools = [
   },
   {
     name: 'delete_task',
-    description: '删除任务',
+    description: t('Delete task', '删除任务'),
     inputSchema: {
       type: 'object',
       properties: {
         taskId: {
           type: 'string',
-          description: '任务ID',
+          description: t('Task ID', '任务ID'),
         },
       },
       required: ['taskId'],
@@ -164,7 +168,7 @@ const tools = [
   },
   {
     name: 'get_stats',
-    description: '获取用户统计信息',
+    description: t('Get user stats', '获取用户统计信息'),
     inputSchema: {
       type: 'object',
       properties: {},
@@ -172,13 +176,13 @@ const tools = [
   },
   {
     name: 'buy_reward',
-    description: '购买奖励',
+    description: t('Buy reward', '购买奖励'),
     inputSchema: {
       type: 'object',
       properties: {
         key: {
           type: 'string',
-          description: '奖励的key或ID',
+          description: t('Reward key or ID', '奖励的key或ID'),
         },
       },
       required: ['key'],
@@ -186,7 +190,7 @@ const tools = [
   },
   {
     name: 'get_inventory',
-    description: '获取物品清单',
+    description: t('Get inventory', '获取物品清单'),
     inputSchema: {
       type: 'object',
       properties: {},
@@ -194,17 +198,17 @@ const tools = [
   },
   {
     name: 'cast_spell',
-    description: '施放技能',
+    description: t('Cast spell', '施放技能'),
     inputSchema: {
       type: 'object',
       properties: {
         spellId: {
           type: 'string',
-          description: '技能ID',
+          description: t('Spell ID', '技能ID'),
         },
         targetId: {
           type: 'string',
-          description: '目标ID (可选)',
+          description: t('Target ID (optional)', '目标ID (可选)'),
         },
       },
       required: ['spellId'],
@@ -212,7 +216,7 @@ const tools = [
   },
   {
     name: 'get_tags',
-    description: '获取标签列表',
+    description: t('Get tags list', '获取标签列表'),
     inputSchema: {
       type: 'object',
       properties: {},
@@ -220,13 +224,13 @@ const tools = [
   },
   {
     name: 'create_tag',
-    description: '创建新标签',
+    description: t('Create tag', '创建新标签'),
     inputSchema: {
       type: 'object',
       properties: {
         name: {
           type: 'string',
-          description: '标签名称',
+          description: t('Tag name', '标签名称'),
         },
       },
       required: ['name'],
