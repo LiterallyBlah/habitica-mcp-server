@@ -1,6 +1,6 @@
 {
   "name": "habitica-mcp-server",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Model Context Protocol server for Habitica API integration. Enable AI assistants to manage your Habitica tasks, habits, pets, and rewards through natural language.",
   "main": "index.js",
   "type": "module",

@@ -103,6 +103,25 @@ const tools = [
           enum: [0.1, 1, 1.5, 2],
           description: t('Priority (0.1=low, 1=med, 1.5=high, 2=urgent)', '优先级 (0.1=低, 1=中, 1.5=高, 2=极高)'),
         },
+        checklist: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              text: {
+                type: 'string',
+                description: t('Checklist item text', '清单项目文本'),
+              },
+              completed: {
+                type: 'boolean',
+                description: t('Completed status', '完成状态'),
+                default: false,
+              },
+            },
+            required: ['text'],
+          },
+          description: t('Checklist items', '清单项目'),
+        },
       },
       required: ['type', 'text'],
     },
@@ -362,6 +381,100 @@ const tools = [
       required: ['itemKey'],
     },
   },
+  {
+    name: 'add_checklist_item',
+    description: t('Add checklist item to task', '向任务添加清单项目'),
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: {
+          type: 'string',
+          description: t('Task ID', '任务ID'),
+        },
+        text: {
+          type: 'string',
+          description: t('Checklist item text', '清单项目文本'),
+        },
+      },
+      required: ['taskId', 'text'],
+    },
+  },
+  {
+    name: 'update_checklist_item',
+    description: t('Update checklist item', '更新清单项目'),
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: {
+          type: 'string',
+          description: t('Task ID', '任务ID'),
+        },
+        itemId: {
+          type: 'string',
+          description: t('Checklist item ID', '清单项目ID'),
+        },
+        text: {
+          type: 'string',
+          description: t('Checklist item text', '清单项目文本'),
+        },
+        completed: {
+          type: 'boolean',
+          description: t('Completed status', '完成状态'),
+        },
+      },
+      required: ['taskId', 'itemId'],
+    },
+  },
+  {
+    name: 'delete_checklist_item',
+    description: t('Delete checklist item', '删除清单项目'),
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: {
+          type: 'string',
+          description: t('Task ID', '任务ID'),
+        },
+        itemId: {
+          type: 'string',
+          description: t('Checklist item ID', '清单项目ID'),
+        },
+      },
+      required: ['taskId', 'itemId'],
+    },
+  },
+  {
+    name: 'get_task_checklist',
+    description: t('Get task checklist items', '获取任务清单项目'),
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: {
+          type: 'string',
+          description: t('Task ID', '任务ID'),
+        },
+      },
+      required: ['taskId'],
+    },
+  },
+  {
+    name: 'score_checklist_item',
+    description: t('Score checklist item (mark complete/incomplete)', '为清单项目评分（标记完成/未完成）'),
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: {
+          type: 'string',
+          description: t('Task ID', '任务ID'),
+        },
+        itemId: {
+          type: 'string',
+          description: t('Checklist item ID', '清单项目ID'),
+        },
+      },
+      required: ['taskId', 'itemId'],
+    },
+  },
 ];
 
 // 注册工具列表处理器
@@ -439,6 +552,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       
       case 'buy_item':
         return await buyItem(args.itemKey, args.quantity);
+      
+      case 'get_task_checklist':
+        return await getTaskChecklist(args.taskId);
+      
+      case 'add_checklist_item':
+        return await addChecklistItem(args.taskId, args.text);
+      
+      case 'update_checklist_item':
+        return await updateChecklistItem(args.taskId, args.itemId, args);
+      
+      case 'delete_checklist_item':
+        return await deleteChecklistItem(args.taskId, args.itemId);
+      
+      case 'score_checklist_item':
+        return await scoreChecklistItem(args.taskId, args.itemId);
       
       default:
         throw new McpError(ErrorCode.MethodNotFound, `未知工具: ${name}`);
@@ -743,6 +871,82 @@ async function buyItem(itemKey, quantity = 1) {
       {
         type: 'text',
         text: `成功购买 ${itemKey} x${quantity}! 剩余金币: ${result.gp}`,
+      },
+    ],
+  };
+}
+
+async function getTaskChecklist(taskId) {
+  const response = await habiticaClient.get(`/tasks/${taskId}`);
+  const task = response.data.data;
+  const checklist = task.checklist || [];
+  
+  return {
+    content: [
+      {
+        type: 'text',
+        text: t(`Task: ${task.text}\nChecklist items (${checklist.length}):`, `任务: ${task.text}\n清单项目 (${checklist.length}):`),
+      },
+      {
+        type: 'text',
+        text: checklist.length > 0 
+          ? checklist.map(item => `${item.completed ? '✓' : '○'} ${item.text} (ID: ${item.id})`).join('\n')
+          : t('No checklist items found', '未找到清单项目'),
+      },
+    ],
+  };
+}
+
+async function addChecklistItem(taskId, text) {
+  const response = await habiticaClient.post(`/tasks/${taskId}/checklist`, { text });
+  const item = response.data.data;
+  
+  return {
+    content: [
+      {
+        type: 'text',
+        text: t(`Successfully added checklist item: ${item.text} (ID: ${item.id})`, `成功添加清单项目: ${item.text} (ID: ${item.id})`),
+      },
+    ],
+  };
+}
+
+async function updateChecklistItem(taskId, itemId, updates) {
+  const response = await habiticaClient.put(`/tasks/${taskId}/checklist/${itemId}`, updates);
+  const item = response.data.data;
+  
+  return {
+    content: [
+      {
+        type: 'text',
+        text: t(`Successfully updated checklist item: ${item.text}`, `成功更新清单项目: ${item.text}`),
+      },
+    ],
+  };
+}
+
+async function deleteChecklistItem(taskId, itemId) {
+  await habiticaClient.delete(`/tasks/${taskId}/checklist/${itemId}`);
+  
+  return {
+    content: [
+      {
+        type: 'text',
+        text: t(`Successfully deleted checklist item (ID: ${itemId})`, `成功删除清单项目 (ID: ${itemId})`),
+      },
+    ],
+  };
+}
+
+async function scoreChecklistItem(taskId, itemId) {
+  const response = await habiticaClient.post(`/tasks/${taskId}/checklist/${itemId}/score`);
+  const item = response.data.data;
+  
+  return {
+    content: [
+      {
+        type: 'text',
+        text: t(`Successfully scored checklist item: ${item.text} (completed: ${item.completed})`, `成功评分清单项目: ${item.text} (完成状态: ${item.completed})`),
       },
     ],
   };

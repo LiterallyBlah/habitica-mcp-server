@@ -8,6 +8,7 @@ A Model Context Protocol (MCP) server that lets AI assistants seamlessly interac
 
 ### 🎮 Core Gameplay Features
 - 📋 **Smart task management** – create / view / update / delete all task types
+- ✅ **Checklist management** – add, update, delete and score checklist items within tasks
 - 🎯 **Habit tracking** – record habit completions and build healthy routines
 - 🐾 **Pet raising** – hatch and feed pets, watch them grow
 - 🏇 **Mount collection** – manage and equip all kinds of mounts
@@ -115,6 +116,9 @@ AI:   "Sure, the habit has been created!"
 User: "Show me today's tasks"
 AI:   "Here is your task list for today…"
 
+User: "Add a checklist item to my project task: 'Review code'"
+AI:   "Added checklist item 'Review code' to your project task!"
+
 User: "I finished my workout, please record it"
 AI:   "Great job! The workout is logged."
 ```
@@ -132,6 +136,13 @@ AI:   "Great job! The workout is logged."
 - `update_task`: Update task
 - `delete_task`: Delete task
 - `score_task`: Complete task or record habit
+
+### Checklist Management
+- `get_task_checklist`: Get checklist items for a task
+- `add_checklist_item`: Add checklist item to task
+- `update_checklist_item`: Update checklist item
+- `delete_checklist_item`: Delete checklist item
+- `score_checklist_item`: Score checklist item (mark complete/incomplete)
 
 ### Tag Management
 - `get_tags`: Get tag list
@@ -165,7 +176,12 @@ AI:   "Great job! The workout is logged."
   "text": "Complete project documentation",
   "notes": "Including API docs and user guide",
   "difficulty": 1.5,
-  "priority": 2
+  "priority": 2,
+  "checklist": [
+    {"text": "Write API documentation", "completed": false},
+    {"text": "Create user guide", "completed": false},
+    {"text": "Review and proofread", "completed": false}
+  ]
 }
 ```
 
@@ -197,6 +213,29 @@ AI:   "Great job! The workout is logged."
 {
   "itemKey": "armor_warrior_1",
   "quantity": 1
+}
+```
+
+### Checklist Management
+```json
+// Add checklist item
+{
+  "taskId": "task-id-here",
+  "text": "Research requirements"
+}
+
+// Update checklist item
+{
+  "taskId": "task-id-here",
+  "itemId": "checklist-item-id",
+  "text": "Updated item text",
+  "completed": true
+}
+
+// Score checklist item (toggle completion)
+{
+  "taskId": "task-id-here",
+  "itemId": "checklist-item-id"
 }
 ```
 
