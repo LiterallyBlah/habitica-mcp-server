@@ -22,6 +22,36 @@ const HABITICA_API_TOKEN = process.env.HABITICA_API_TOKEN;
 // Detect language (default EN)
 setLanguage(process.env.MCP_LANG || process.env.LANG || "en");
 
+// Tool configuration - set to false to disable tools
+const TOOL_CONFIG = {
+  get_user_profile: true,
+  get_tasks: true,
+  create_task: true,
+  score_task: true,
+  update_task: true,
+  delete_task: true,
+  get_stats: true,
+  buy_reward: true,
+  get_inventory: true,
+  cast_spell: true,
+  get_tags: true,
+  create_tag: true,
+  get_pets: false, // Example: disabled by default
+  feed_pet: false, // Example: disabled by default
+  hatch_pet: false, // Example: disabled by default
+  get_mounts: false, // Example: disabled by default
+  equip_item: true,
+  get_notifications: true,
+  read_notification: true,
+  get_shop: true,
+  buy_item: true,
+  add_checklist_item: true,
+  update_checklist_item: true,
+  delete_checklist_item: true,
+  get_task_checklist: true,
+  score_checklist_item: true,
+};
+
 if (!HABITICA_USER_ID || !HABITICA_API_TOKEN) {
   console.error(
     t(
@@ -57,7 +87,7 @@ const server = new Server(
 );
 
 // Tool definitions
-const tools = [
+const allTools = [
   {
     name: "get_user_profile",
     description: t("Get user profile", "Get user profile"),
@@ -495,16 +525,26 @@ const tools = [
   },
 ];
 
+// Helper function to get enabled tools
+function getEnabledTools() {
+  return allTools.filter((tool) => TOOL_CONFIG[tool.name] === true);
+}
+
 // Register tools list handler
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: tools,
+    tools: getEnabledTools(),
   };
 });
 
 // Register tool call handler
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
+
+  // Check if tool is enabled
+  if (!TOOL_CONFIG[name]) {
+    throw new McpError(ErrorCode.MethodNotFound, `Tool '${name}' is disabled`);
+  }
 
   try {
     switch (name) {
