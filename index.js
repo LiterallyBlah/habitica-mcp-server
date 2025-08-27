@@ -1,47 +1,53 @@
 #!/usr/bin/env node
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
   ErrorCode,
   ListToolsRequestSchema,
   McpError,
-} from '@modelcontextprotocol/sdk/types.js';
-import axios from 'axios';
-import { z } from 'zod';
-import { setLanguage, t } from './i18n.js';
+} from "@modelcontextprotocol/sdk/types.js";
+import axios from "axios";
+import { z } from "zod";
+import { setLanguage, t } from "./i18n.js";
 
-// Habitica API 基础配置
-const HABITICA_API_BASE = 'https://habitica.com/api/v3';
+// Habitica API base configuration
+const HABITICA_API_BASE = "https://habitica.com/api/v3";
 
-// 验证环境变量
+// Validate environment variables
 const HABITICA_USER_ID = process.env.HABITICA_USER_ID;
 const HABITICA_API_TOKEN = process.env.HABITICA_API_TOKEN;
 
 // Detect language (default EN)
-setLanguage(process.env.MCP_LANG || process.env.LANG || 'en');
+setLanguage(process.env.MCP_LANG || process.env.LANG || "en");
 
 if (!HABITICA_USER_ID || !HABITICA_API_TOKEN) {
-  console.error(t('Error: Please set HABITICA_USER_ID and HABITICA_API_TOKEN environment variables', '错误: 请设置 HABITICA_USER_ID 和 HABITICA_API_TOKEN 环境变量'));
+  console.error(
+    t(
+      "Error: Please set HABITICA_USER_ID and HABITICA_API_TOKEN environment variables",
+      "Error: Please set HABITICA_USER_ID and HABITICA_API_TOKEN environment variables"
+    )
+  );
   process.exit(1);
 }
 
-// 创建 Habitica API 客户端
+// Create Habitica API client
 const habiticaClient = axios.create({
   baseURL: HABITICA_API_BASE,
   headers: {
-    'x-api-user': HABITICA_USER_ID,
-    'x-api-key': HABITICA_API_TOKEN,
-    'Content-Type': 'application/json',
+    "x-api-user": HABITICA_USER_ID,
+    "x-api-key": HABITICA_API_TOKEN,
+    "x-client": HABITICA_USER_ID + "habitica-mcp-server",
+    "Content-Type": "application/json",
   },
 });
 
-// 创建 MCP 服务器
+// Create MCP server
 const server = new Server(
   {
-    name: 'habitica-mcp-server',
-    version: '0.0.1',
+    name: "habitica-mcp-server",
+    version: "0.0.1",
   },
   {
     capabilities: {
@@ -50,546 +56,562 @@ const server = new Server(
   }
 );
 
-// 工具定义
+// Tool definitions
 const tools = [
   {
-    name: 'get_user_profile',
-    description: t('Get user profile', '获取用户档案信息'),
+    name: "get_user_profile",
+    description: t("Get user profile", "Get user profile"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {},
     },
   },
   {
-    name: 'get_tasks',
-    description: t('Get tasks list', '获取任务列表'),
+    name: "get_tasks",
+    description: t("Get tasks list", "Get tasks list"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         type: {
-          type: 'string',
-          enum: ['habits', 'dailys', 'todos', 'rewards'],
-          description: t('Task type', '任务类型'),
+          type: "string",
+          enum: ["habits", "dailys", "todos", "rewards"],
+          description: t("Task type", "Task type"),
         },
       },
     },
   },
   {
-    name: 'create_task',
-    description: t('Create new task', '创建新任务'),
+    name: "create_task",
+    description: t("Create new task", "Create new task"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         type: {
-          type: 'string',
-          enum: ['habit', 'daily', 'todo', 'reward'],
-          description: t('Task type', '任务类型'),
+          type: "string",
+          enum: ["habit", "daily", "todo", "reward"],
+          description: t("Task type", "Task type"),
         },
         text: {
-          type: 'string',
-          description: t('Task title', '任务标题'),
+          type: "string",
+          description: t("Task title", "Task title"),
         },
         notes: {
-          type: 'string',
-          description: t('Task notes', '任务备注'),
+          type: "string",
+          description: t("Task notes", "Task notes"),
         },
         difficulty: {
-          type: 'number',
+          type: "number",
           enum: [0.1, 1, 1.5, 2],
-          description: t('Difficulty (0.1=easy, 1=medium, 1.5=hard, 2=very hard)', '难度 (0.1=简单, 1=中等, 1.5=困难, 2=极难)'),
+          description: t(
+            "Difficulty (0.1=easy, 1=medium, 1.5=hard, 2=very hard)",
+            "Difficulty (0.1=easy, 1=medium, 1.5=hard, 2=very hard)"
+          ),
         },
         priority: {
-          type: 'number',
+          type: "number",
           enum: [0.1, 1, 1.5, 2],
-          description: t('Priority (0.1=low, 1=med, 1.5=high, 2=urgent)', '优先级 (0.1=低, 1=中, 1.5=高, 2=极高)'),
+          description: t(
+            "Priority (0.1=low, 1=med, 1.5=high, 2=urgent)",
+            "Priority (0.1=low, 1=med, 1.5=high, 2=urgent)"
+          ),
         },
         checklist: {
-          type: 'array',
+          type: "array",
           items: {
-            type: 'object',
+            type: "object",
             properties: {
               text: {
-                type: 'string',
-                description: t('Checklist item text', '清单项目文本'),
+                type: "string",
+                description: t("Checklist item text", "Checklist item text"),
               },
               completed: {
-                type: 'boolean',
-                description: t('Completed status', '完成状态'),
+                type: "boolean",
+                description: t("Completed status", "Completed status"),
                 default: false,
               },
             },
-            required: ['text'],
+            required: ["text"],
           },
-          description: t('Checklist items', '清单项目'),
+          description: t("Checklist items", "Checklist items"),
         },
       },
-      required: ['type', 'text'],
+      required: ["type", "text"],
     },
   },
   {
-    name: 'score_task',
-    description: t('Score task / habit', '完成任务或记录习惯'),
+    name: "score_task",
+    description: t("Score task / habit", "Score task / habit"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         taskId: {
-          type: 'string',
-          description: t('Task ID', '任务ID'),
+          type: "string",
+          description: t("Task ID", "Task ID"),
         },
         direction: {
-          type: 'string',
-          enum: ['up', 'down'],
-          description: t('Direction (up=positive, down=negative, habits only)', '方向 (up=正向, down=负向，仅适用于习惯)'),
+          type: "string",
+          enum: ["up", "down"],
+          description: t(
+            "Direction (up=positive, down=negative, habits only)",
+            "Direction (up=positive, down=negative, habits only)"
+          ),
         },
       },
-      required: ['taskId'],
+      required: ["taskId"],
     },
   },
   {
-    name: 'update_task',
-    description: t('Update task', '更新任务'),
+    name: "update_task",
+    description: t("Update task", "Update task"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         taskId: {
-          type: 'string',
-          description: t('Task ID', '任务ID'),
+          type: "string",
+          description: t("Task ID", "Task ID"),
         },
         text: {
-          type: 'string',
-          description: t('Task title', '任务标题'),
+          type: "string",
+          description: t("Task title", "Task title"),
         },
         notes: {
-          type: 'string',
-          description: t('Task notes', '任务备注'),
+          type: "string",
+          description: t("Task notes", "Task notes"),
         },
         completed: {
-          type: 'boolean',
-          description: t('Completed flag', '是否完成'),
+          type: "boolean",
+          description: t("Completed flag", "Completed flag"),
         },
       },
-      required: ['taskId'],
+      required: ["taskId"],
     },
   },
   {
-    name: 'delete_task',
-    description: t('Delete task', '删除任务'),
+    name: "delete_task",
+    description: t("Delete task", "Delete task"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         taskId: {
-          type: 'string',
-          description: t('Task ID', '任务ID'),
+          type: "string",
+          description: t("Task ID", "Task ID"),
         },
       },
-      required: ['taskId'],
+      required: ["taskId"],
     },
   },
   {
-    name: 'get_stats',
-    description: t('Get user stats', '获取用户统计信息'),
+    name: "get_stats",
+    description: t("Get user stats", "Get user stats"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {},
     },
   },
   {
-    name: 'buy_reward',
-    description: t('Buy reward', '购买奖励'),
+    name: "buy_reward",
+    description: t("Buy reward", "Buy reward"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         key: {
-          type: 'string',
-          description: t('Reward key or ID', '奖励的key或ID'),
+          type: "string",
+          description: t("Reward key or ID", "Reward key or ID"),
         },
       },
-      required: ['key'],
+      required: ["key"],
     },
   },
   {
-    name: 'get_inventory',
-    description: t('Get inventory', '获取物品清单'),
+    name: "get_inventory",
+    description: t("Get inventory", "Get inventory"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {},
     },
   },
   {
-    name: 'cast_spell',
-    description: t('Cast spell', '施放技能'),
+    name: "cast_spell",
+    description: t("Cast spell", "Cast spell"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         spellId: {
-          type: 'string',
-          description: t('Spell ID', '技能ID'),
+          type: "string",
+          description: t("Spell ID", "Spell ID"),
         },
         targetId: {
-          type: 'string',
-          description: t('Target ID (optional)', '目标ID (可选)'),
+          type: "string",
+          description: t("Target ID (optional)", "Target ID (optional)"),
         },
       },
-      required: ['spellId'],
+      required: ["spellId"],
     },
   },
   {
-    name: 'get_tags',
-    description: t('Get tags list', '获取标签列表'),
+    name: "get_tags",
+    description: t("Get tags list", "Get tags list"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {},
     },
   },
   {
-    name: 'create_tag',
-    description: t('Create tag', '创建新标签'),
+    name: "create_tag",
+    description: t("Create tag", "Create tag"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         name: {
-          type: 'string',
-          description: t('Tag name', '标签名称'),
+          type: "string",
+          description: t("Tag name", "Tag name"),
         },
       },
-      required: ['name'],
+      required: ["name"],
     },
   },
   {
-    name: 'get_pets',
-    description: '获取宠物列表',
+    name: "get_pets",
+    description: "Get pets list",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {},
     },
   },
   {
-    name: 'feed_pet',
-    description: '喂养宠物',
+    name: "feed_pet",
+    description: "Feed pet",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         pet: {
-          type: 'string',
-          description: '宠物key',
+          type: "string",
+          description: "Pet key",
         },
         food: {
-          type: 'string',
-          description: '食物key',
+          type: "string",
+          description: "Food key",
         },
       },
-      required: ['pet', 'food'],
+      required: ["pet", "food"],
     },
   },
   {
-    name: 'hatch_pet',
-    description: '孵化宠物',
+    name: "hatch_pet",
+    description: "Hatch pet",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         egg: {
-          type: 'string',
-          description: '蛋的key',
+          type: "string",
+          description: "Egg key",
         },
         hatchingPotion: {
-          type: 'string',
-          description: '孵化药水的key',
+          type: "string",
+          description: "Hatching potion key",
         },
       },
-      required: ['egg', 'hatchingPotion'],
+      required: ["egg", "hatchingPotion"],
     },
   },
   {
-    name: 'get_mounts',
-    description: '获取坐骑列表',
+    name: "get_mounts",
+    description: "Get mounts list",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {},
     },
   },
   {
-    name: 'equip_item',
-    description: '装备物品',
+    name: "equip_item",
+    description: "Equip item",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         type: {
-          type: 'string',
-          enum: ['mount', 'pet', 'costume', 'equipped'],
-          description: '装备类型',
+          type: "string",
+          enum: ["mount", "pet", "costume", "equipped"],
+          description: "Equipment type",
         },
         key: {
-          type: 'string',
-          description: '物品key',
+          type: "string",
+          description: "Item key",
         },
       },
-      required: ['type', 'key'],
+      required: ["type", "key"],
     },
   },
   {
-    name: 'get_notifications',
-    description: '获取通知列表',
+    name: "get_notifications",
+    description: "Get notifications list",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {},
     },
   },
   {
-    name: 'read_notification',
-    description: '标记通知为已读',
+    name: "read_notification",
+    description: "Mark notification as read",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         notificationId: {
-          type: 'string',
-          description: '通知ID',
+          type: "string",
+          description: "Notification ID",
         },
       },
-      required: ['notificationId'],
+      required: ["notificationId"],
     },
   },
   {
-    name: 'get_shop',
-    description: '获取商店物品',
+    name: "get_shop",
+    description: "Get shop items",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         shopType: {
-          type: 'string',
-          enum: ['market', 'questShop', 'timeTravelersShop', 'seasonalShop'],
-          description: '商店类型',
+          type: "string",
+          enum: ["market", "questShop", "timeTravelersShop", "seasonalShop"],
+          description: "Shop type",
         },
       },
     },
   },
   {
-    name: 'buy_item',
-    description: '购买商店物品',
+    name: "buy_item",
+    description: "Buy shop item",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         itemKey: {
-          type: 'string',
-          description: '物品key',
+          type: "string",
+          description: "Item key",
         },
         quantity: {
-          type: 'number',
-          description: '购买数量',
+          type: "number",
+          description: "Purchase quantity",
           default: 1,
         },
       },
-      required: ['itemKey'],
+      required: ["itemKey"],
     },
   },
   {
-    name: 'add_checklist_item',
-    description: t('Add checklist item to task', '向任务添加清单项目'),
+    name: "add_checklist_item",
+    description: t("Add checklist item to task", "Add checklist item to task"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         taskId: {
-          type: 'string',
-          description: t('Task ID', '任务ID'),
+          type: "string",
+          description: t("Task ID", "Task ID"),
         },
         text: {
-          type: 'string',
-          description: t('Checklist item text', '清单项目文本'),
+          type: "string",
+          description: t("Checklist item text", "Checklist item text"),
         },
       },
-      required: ['taskId', 'text'],
+      required: ["taskId", "text"],
     },
   },
   {
-    name: 'update_checklist_item',
-    description: t('Update checklist item', '更新清单项目'),
+    name: "update_checklist_item",
+    description: t("Update checklist item", "Update checklist item"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         taskId: {
-          type: 'string',
-          description: t('Task ID', '任务ID'),
+          type: "string",
+          description: t("Task ID", "Task ID"),
         },
         itemId: {
-          type: 'string',
-          description: t('Checklist item ID', '清单项目ID'),
+          type: "string",
+          description: t("Checklist item ID", "Checklist item ID"),
         },
         text: {
-          type: 'string',
-          description: t('Checklist item text', '清单项目文本'),
+          type: "string",
+          description: t("Checklist item text", "Checklist item text"),
         },
         completed: {
-          type: 'boolean',
-          description: t('Completed status', '完成状态'),
+          type: "boolean",
+          description: t("Completed status", "Completed status"),
         },
       },
-      required: ['taskId', 'itemId'],
+      required: ["taskId", "itemId"],
     },
   },
   {
-    name: 'delete_checklist_item',
-    description: t('Delete checklist item', '删除清单项目'),
+    name: "delete_checklist_item",
+    description: t("Delete checklist item", "Delete checklist item"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         taskId: {
-          type: 'string',
-          description: t('Task ID', '任务ID'),
+          type: "string",
+          description: t("Task ID", "Task ID"),
         },
         itemId: {
-          type: 'string',
-          description: t('Checklist item ID', '清单项目ID'),
+          type: "string",
+          description: t("Checklist item ID", "Checklist item ID"),
         },
       },
-      required: ['taskId', 'itemId'],
+      required: ["taskId", "itemId"],
     },
   },
   {
-    name: 'get_task_checklist',
-    description: t('Get task checklist items', '获取任务清单项目'),
+    name: "get_task_checklist",
+    description: t("Get task checklist items", "Get task checklist items"),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         taskId: {
-          type: 'string',
-          description: t('Task ID', '任务ID'),
+          type: "string",
+          description: t("Task ID", "Task ID"),
         },
       },
-      required: ['taskId'],
+      required: ["taskId"],
     },
   },
   {
-    name: 'score_checklist_item',
-    description: t('Score checklist item (mark complete/incomplete)', '为清单项目评分（标记完成/未完成）'),
+    name: "score_checklist_item",
+    description: t(
+      "Score checklist item (mark complete/incomplete)",
+      "Score checklist item (mark complete/incomplete)"
+    ),
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
         taskId: {
-          type: 'string',
-          description: t('Task ID', '任务ID'),
+          type: "string",
+          description: t("Task ID", "Task ID"),
         },
         itemId: {
-          type: 'string',
-          description: t('Checklist item ID', '清单项目ID'),
+          type: "string",
+          description: t("Checklist item ID", "Checklist item ID"),
         },
       },
-      required: ['taskId', 'itemId'],
+      required: ["taskId", "itemId"],
     },
   },
 ];
 
-// 注册工具列表处理器
+// Register tools list handler
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: tools,
   };
 });
 
-// 注册工具调用处理器
+// Register tool call handler
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
     switch (name) {
-      case 'get_user_profile':
+      case "get_user_profile":
         return await getUserProfile();
-      
-      case 'get_tasks':
+
+      case "get_tasks":
         return await getTasks(args.type);
-      
-      case 'create_task':
+
+      case "create_task":
         return await createTask(args);
-      
-      case 'score_task':
+
+      case "score_task":
         return await scoreTask(args.taskId, args.direction);
-      
-      case 'update_task':
+
+      case "update_task":
         return await updateTask(args.taskId, args);
-      
-      case 'delete_task':
+
+      case "delete_task":
         return await deleteTask(args.taskId);
-      
-      case 'get_stats':
+
+      case "get_stats":
         return await getStats();
-      
-      case 'buy_reward':
+
+      case "buy_reward":
         return await buyReward(args.key);
-      
-      case 'get_inventory':
+
+      case "get_inventory":
         return await getInventory();
-      
-      case 'cast_spell':
+
+      case "cast_spell":
         return await castSpell(args.spellId, args.targetId);
-      
-      case 'get_tags':
+
+      case "get_tags":
         return await getTags();
-      
-      case 'create_tag':
+
+      case "create_tag":
         return await createTag(args.name);
-      
-      case 'get_pets':
+
+      case "get_pets":
         return await getPets();
-      
-      case 'feed_pet':
+
+      case "feed_pet":
         return await feedPet(args.pet, args.food);
-      
-      case 'hatch_pet':
+
+      case "hatch_pet":
         return await hatchPet(args.egg, args.hatchingPotion);
-      
-      case 'get_mounts':
+
+      case "get_mounts":
         return await getMounts();
-      
-      case 'equip_item':
+
+      case "equip_item":
         return await equipItem(args.type, args.key);
-      
-      case 'get_notifications':
+
+      case "get_notifications":
         return await getNotifications();
-      
-      case 'read_notification':
+
+      case "read_notification":
         return await readNotification(args.notificationId);
-      
-      case 'get_shop':
+
+      case "get_shop":
         return await getShop(args.shopType);
-      
-      case 'buy_item':
+
+      case "buy_item":
         return await buyItem(args.itemKey, args.quantity);
-      
-      case 'get_task_checklist':
+
+      case "get_task_checklist":
         return await getTaskChecklist(args.taskId);
-      
-      case 'add_checklist_item':
+
+      case "add_checklist_item":
         return await addChecklistItem(args.taskId, args.text);
-      
-      case 'update_checklist_item':
+
+      case "update_checklist_item":
         return await updateChecklistItem(args.taskId, args.itemId, args);
-      
-      case 'delete_checklist_item':
+
+      case "delete_checklist_item":
         return await deleteChecklistItem(args.taskId, args.itemId);
-      
-      case 'score_checklist_item':
+
+      case "score_checklist_item":
         return await scoreChecklistItem(args.taskId, args.itemId);
-      
+
       default:
-        throw new McpError(ErrorCode.MethodNotFound, `未知工具: ${name}`);
+        throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
     }
   } catch (error) {
     if (error instanceof McpError) {
       throw error;
     }
-    
-    const errorMessage = error.response?.data?.message || error.message || '未知错误';
-    throw new McpError(ErrorCode.InternalError, `Habitica API 错误: ${errorMessage}`);
+
+    const errorMessage =
+      error.response?.data?.message || error.message || "Unknown error";
+    throw new McpError(
+      ErrorCode.InternalError,
+      `Habitica API error: ${errorMessage}`
+    );
   }
 });
 
-// 工具实现函数
+// Tool implementation functions
 async function getUserProfile() {
-  const response = await habiticaClient.get('/user');
+  const response = await habiticaClient.get("/user");
   const user = response.data.data;
-  
+
   return {
     content: [
       {
-        type: 'text',
+        type: "text",
         text: JSON.stringify(user, null, 2),
       },
     ],
@@ -597,13 +619,13 @@ async function getUserProfile() {
 }
 
 async function getTasks(type) {
-  const endpoint = type ? `/tasks/user?type=${type}` : '/tasks/user';
+  const endpoint = type ? `/tasks/user?type=${type}` : "/tasks/user";
   const response = await habiticaClient.get(endpoint);
-  
+
   return {
     content: [
       {
-        type: 'text',
+        type: "text",
         text: JSON.stringify(response.data, null, 2),
       },
     ],
@@ -611,32 +633,34 @@ async function getTasks(type) {
 }
 
 async function createTask(taskData) {
-  const response = await habiticaClient.post('/tasks/user', taskData);
+  const response = await habiticaClient.post("/tasks/user", taskData);
   const task = response.data.data;
-  
+
   return {
     content: [
       {
-        type: 'text',
-        text: `成功创建任务: ${task.text} (ID: ${task.id})`,
+        type: "text",
+        text: `Successfully created task: ${task.text} (ID: ${task.id})`,
       },
     ],
   };
 }
 
-async function scoreTask(taskId, direction = 'up') {
-  const response = await habiticaClient.post(`/tasks/${taskId}/score/${direction}`);
+async function scoreTask(taskId, direction = "up") {
+  const response = await habiticaClient.post(
+    `/tasks/${taskId}/score/${direction}`
+  );
   const result = response.data.data;
-  
-  let message = `任务完成! `;
-  if (result.exp) message += `获得 ${result.exp} 经验值 `;
-  if (result.gp) message += `获得 ${result.gp} 金币 `;
-  if (result.lvl) message += `升级到 ${result.lvl} 级! `;
-  
+
+  let message = `Task completed! `;
+  if (result.exp) message += `Gained ${result.exp} experience `;
+  if (result.gp) message += `Gained ${result.gp} gold `;
+  if (result.lvl) message += `Level up to ${result.lvl}! `;
+
   return {
     content: [
       {
-        type: 'text',
+        type: "text",
         text: message,
       },
     ],
@@ -646,12 +670,12 @@ async function scoreTask(taskId, direction = 'up') {
 async function updateTask(taskId, updates) {
   const response = await habiticaClient.put(`/tasks/${taskId}`, updates);
   const task = response.data.data;
-  
+
   return {
     content: [
       {
-        type: 'text',
-        text: `成功更新任务: ${task.text}`,
+        type: "text",
+        text: `Successfully updated task: ${task.text}`,
       },
     ],
   };
@@ -659,24 +683,24 @@ async function updateTask(taskId, updates) {
 
 async function deleteTask(taskId) {
   await habiticaClient.delete(`/tasks/${taskId}`);
-  
+
   return {
     content: [
       {
-        type: 'text',
-        text: `成功删除任务 (ID: ${taskId})`,
+        type: "text",
+        text: `Successfully deleted task (ID: ${taskId})`,
       },
     ],
   };
 }
 
 async function getStats() {
-  const response = await habiticaClient.get('/user');
-  
+  const response = await habiticaClient.get("/user");
+
   return {
     content: [
       {
-        type: 'text',
+        type: "text",
         text: JSON.stringify(response.data.data.stats, null, 2),
       },
     ],
@@ -686,24 +710,24 @@ async function getStats() {
 async function buyReward(key) {
   const response = await habiticaClient.post(`/user/buy/${key}`);
   const result = response.data.data;
-  
+
   return {
     content: [
       {
-        type: 'text',
-        text: `成功购买奖励! 剩余金币: ${result.gp}`,
+        type: "text",
+        text: `Successfully bought reward! Remaining gold: ${result.gp}`,
       },
     ],
   };
 }
 
 async function getInventory() {
-  const response = await habiticaClient.get('/user');
-  
+  const response = await habiticaClient.get("/user");
+
   return {
     content: [
       {
-        type: 'text',
+        type: "text",
         text: JSON.stringify(response.data.data.items, null, 2),
       },
     ],
@@ -711,26 +735,28 @@ async function getInventory() {
 }
 
 async function castSpell(spellId, targetId) {
-  const endpoint = targetId ? `/user/class/cast/${spellId}?targetId=${targetId}` : `/user/class/cast/${spellId}`;
+  const endpoint = targetId
+    ? `/user/class/cast/${spellId}?targetId=${targetId}`
+    : `/user/class/cast/${spellId}`;
   const response = await habiticaClient.post(endpoint);
-  
+
   return {
     content: [
       {
-        type: 'text',
-        text: `成功施放技能: ${spellId}`,
+        type: "text",
+        text: `Successfully cast spell: ${spellId}`,
       },
     ],
   };
 }
 
 async function getTags() {
-  const response = await habiticaClient.get('/tags');
-  
+  const response = await habiticaClient.get("/tags");
+
   return {
     content: [
       {
-        type: 'text',
+        type: "text",
         text: JSON.stringify(response.data, null, 2),
       },
     ],
@@ -738,26 +764,26 @@ async function getTags() {
 }
 
 async function createTag(name) {
-  const response = await habiticaClient.post('/tags', { name });
+  const response = await habiticaClient.post("/tags", { name });
   const tag = response.data.data;
-  
+
   return {
     content: [
       {
-        type: 'text',
-        text: `成功创建标签: ${tag.name} (ID: ${tag.id})`,
+        type: "text",
+        text: `Successfully created tag: ${tag.name} (ID: ${tag.id})`,
       },
     ],
   };
 }
 
 async function getPets() {
-  const response = await habiticaClient.get('/user');
-  
+  const response = await habiticaClient.get("/user");
+
   return {
     content: [
       {
-        type: 'text',
+        type: "text",
         text: JSON.stringify(response.data.data.items.pets, null, 2),
       },
     ],
@@ -767,16 +793,16 @@ async function getPets() {
 async function feedPet(pet, food) {
   const response = await habiticaClient.post(`/user/feed/${pet}/${food}`);
   const result = response.data.data;
-  
-  let message = `成功喂养宠物 ${pet}! `;
+
+  let message = `Successfully fed pet ${pet}! `;
   if (result.message) {
     message += result.message;
   }
-  
+
   return {
     content: [
       {
-        type: 'text',
+        type: "text",
         text: message,
       },
     ],
@@ -784,26 +810,28 @@ async function feedPet(pet, food) {
 }
 
 async function hatchPet(egg, hatchingPotion) {
-  const response = await habiticaClient.post(`/user/hatch/${egg}/${hatchingPotion}`);
+  const response = await habiticaClient.post(
+    `/user/hatch/${egg}/${hatchingPotion}`
+  );
   const result = response.data.data;
-  
+
   return {
     content: [
       {
-        type: 'text',
-        text: `成功孵化宠物! 获得了 ${egg}-${hatchingPotion}`,
+        type: "text",
+        text: `Successfully hatched pet! Got ${egg}-${hatchingPotion}`,
       },
     ],
   };
 }
 
 async function getMounts() {
-  const response = await habiticaClient.get('/user');
-  
+  const response = await habiticaClient.get("/user");
+
   return {
     content: [
       {
-        type: 'text',
+        type: "text",
         text: JSON.stringify(response.data.data.items.mounts, null, 2),
       },
     ],
@@ -812,24 +840,24 @@ async function getMounts() {
 
 async function equipItem(type, key) {
   const response = await habiticaClient.post(`/user/equip/${type}/${key}`);
-  
+
   return {
     content: [
       {
-        type: 'text',
-        text: `成功装备 ${type}: ${key}`,
+        type: "text",
+        text: `Successfully equipped ${type}: ${key}`,
       },
     ],
   };
 }
 
 async function getNotifications() {
-  const response = await habiticaClient.get('/notifications');
-  
+  const response = await habiticaClient.get("/notifications");
+
   return {
     content: [
       {
-        type: 'text',
+        type: "text",
         text: JSON.stringify(response.data, null, 2),
       },
     ],
@@ -838,24 +866,24 @@ async function getNotifications() {
 
 async function readNotification(notificationId) {
   await habiticaClient.post(`/notifications/${notificationId}/read`);
-  
+
   return {
     content: [
       {
-        type: 'text',
-        text: `成功标记通知为已读 (ID: ${notificationId})`,
+        type: "text",
+        text: `Successfully marked notification as read (ID: ${notificationId})`,
       },
     ],
   };
 }
 
-async function getShop(shopType = 'market') {
+async function getShop(shopType = "market") {
   const response = await habiticaClient.get(`/shops/${shopType}`);
-  
+
   return {
     content: [
       {
-        type: 'text',
+        type: "text",
         text: JSON.stringify(response.data, null, 2),
       },
     ],
@@ -863,14 +891,16 @@ async function getShop(shopType = 'market') {
 }
 
 async function buyItem(itemKey, quantity = 1) {
-  const response = await habiticaClient.post(`/user/buy/${itemKey}`, { quantity });
+  const response = await habiticaClient.post(`/user/buy/${itemKey}`, {
+    quantity,
+  });
   const result = response.data.data;
-  
+
   return {
     content: [
       {
-        type: 'text',
-        text: `成功购买 ${itemKey} x${quantity}! 剩余金币: ${result.gp}`,
+        type: "text",
+        text: `Successfully bought ${itemKey} x${quantity}! Remaining gold: ${result.gp}`,
       },
     ],
   };
@@ -880,46 +910,68 @@ async function getTaskChecklist(taskId) {
   const response = await habiticaClient.get(`/tasks/${taskId}`);
   const task = response.data.data;
   const checklist = task.checklist || [];
-  
+
   return {
     content: [
       {
-        type: 'text',
-        text: t(`Task: ${task.text}\nChecklist items (${checklist.length}):`, `任务: ${task.text}\n清单项目 (${checklist.length}):`),
+        type: "text",
+        text: t(
+          `Task: ${task.text}\nChecklist items (${checklist.length}):`,
+          `Task: ${task.text}\nChecklist items (${checklist.length}):`
+        ),
       },
       {
-        type: 'text',
-        text: checklist.length > 0 
-          ? checklist.map(item => `${item.completed ? '✓' : '○'} ${item.text} (ID: ${item.id})`).join('\n')
-          : t('No checklist items found', '未找到清单项目'),
+        type: "text",
+        text:
+          checklist.length > 0
+            ? checklist
+                .map(
+                  (item) =>
+                    `${item.completed ? "✓" : "○"} ${item.text} (ID: ${
+                      item.id
+                    })`
+                )
+                .join("\n")
+            : t("No checklist items found", "No checklist items found"),
       },
     ],
   };
 }
 
 async function addChecklistItem(taskId, text) {
-  const response = await habiticaClient.post(`/tasks/${taskId}/checklist`, { text });
+  const response = await habiticaClient.post(`/tasks/${taskId}/checklist`, {
+    text,
+  });
   const item = response.data.data;
-  
+
   return {
     content: [
       {
-        type: 'text',
-        text: t(`Successfully added checklist item: ${item.text} (ID: ${item.id})`, `成功添加清单项目: ${item.text} (ID: ${item.id})`),
+        type: "text",
+        text: t(
+          `Successfully added checklist item: ${item.text} (ID: ${item.id})`,
+          `Successfully added checklist item: ${item.text} (ID: ${item.id})`
+        ),
       },
     ],
   };
 }
 
 async function updateChecklistItem(taskId, itemId, updates) {
-  const response = await habiticaClient.put(`/tasks/${taskId}/checklist/${itemId}`, updates);
+  const response = await habiticaClient.put(
+    `/tasks/${taskId}/checklist/${itemId}`,
+    updates
+  );
   const item = response.data.data;
-  
+
   return {
     content: [
       {
-        type: 'text',
-        text: t(`Successfully updated checklist item: ${item.text}`, `成功更新清单项目: ${item.text}`),
+        type: "text",
+        text: t(
+          `Successfully updated checklist item: ${item.text}`,
+          `Successfully updated checklist item: ${item.text}`
+        ),
       },
     ],
   };
@@ -927,39 +979,47 @@ async function updateChecklistItem(taskId, itemId, updates) {
 
 async function deleteChecklistItem(taskId, itemId) {
   await habiticaClient.delete(`/tasks/${taskId}/checklist/${itemId}`);
-  
+
   return {
     content: [
       {
-        type: 'text',
-        text: t(`Successfully deleted checklist item (ID: ${itemId})`, `成功删除清单项目 (ID: ${itemId})`),
+        type: "text",
+        text: t(
+          `Successfully deleted checklist item (ID: ${itemId})`,
+          `Successfully deleted checklist item (ID: ${itemId})`
+        ),
       },
     ],
   };
 }
 
 async function scoreChecklistItem(taskId, itemId) {
-  const response = await habiticaClient.post(`/tasks/${taskId}/checklist/${itemId}/score`);
+  const response = await habiticaClient.post(
+    `/tasks/${taskId}/checklist/${itemId}/score`
+  );
   const item = response.data.data;
-  
+
   return {
     content: [
       {
-        type: 'text',
-        text: t(`Successfully scored checklist item: ${item.text} (completed: ${item.completed})`, `成功评分清单项目: ${item.text} (完成状态: ${item.completed})`),
+        type: "text",
+        text: t(
+          `Successfully scored checklist item: ${item.text} (completed: ${item.completed})`,
+          `Successfully scored checklist item: ${item.text} (completed: ${item.completed})`
+        ),
       },
     ],
   };
 }
 
-// 启动服务器
+// Start server
 async function runServer() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('Habitica MCP 服务器已启动');
+  console.error("Habitica MCP server started");
 }
 
 runServer().catch((error) => {
-  console.error('服务器启动失败:', error);
+  console.error("Server startup failed:", error);
   process.exit(1);
-}); 
+});
