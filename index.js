@@ -59,6 +59,13 @@ if (!HABITICA_USER_ID || !HABITICA_API_TOKEN) {
       "Error: Please set HABITICA_USER_ID and HABITICA_API_TOKEN environment variables"
     )
   );
+  console.error("\nTo set up your Habitica API credentials:");
+  console.error("1. Log into Habitica and go to Settings > API");
+  console.error("2. Copy your User ID and API Token");
+  console.error("3. Set environment variables:");
+  console.error("   HABITICA_USER_ID=your-user-id");
+  console.error("   HABITICA_API_TOKEN=your-api-token");
+  console.error("\nFor more information, visit: https://habitica.com/apidoc/");
   process.exit(1);
 }
 
@@ -72,6 +79,49 @@ const habiticaClient = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+// Add response interceptor for better error handling
+habiticaClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Log errors for debugging while preserving the original error
+    if (process.env.DEBUG) {
+      console.error("Habitica API Error:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+        method: error.config?.method,
+      });
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Test API credentials on startup
+async function validateCredentials() {
+  try {
+    await habiticaClient.get("/user");
+    console.error("✅ Habitica API credentials validated successfully");
+  } catch (error) {
+    console.error("❌ Failed to validate Habitica API credentials:");
+    if (error.response?.status === 401) {
+      console.error(
+        "   Invalid User ID or API Token. Please check your credentials."
+      );
+      console.error(
+        "   Get your credentials from: https://habitica.com/user/settings/api"
+      );
+    } else if (error.code === "ENOTFOUND" || error.code === "ECONNREFUSED") {
+      console.error(
+        "   Cannot connect to Habitica servers. Check your internet connection."
+      );
+    } else {
+      console.error(`   Error: ${error.message}`);
+    }
+    console.error("\nThe server will continue to run, but API calls may fail.");
+  }
+}
 
 // Create MCP server
 const server = new Server(
@@ -688,6 +738,273 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   };
 });
 
+// Helper function to create detailed error messages based on Habitica API responses
+function createHabiticaError(error, toolName) {
+  if (error instanceof McpError) {
+    return error;
+  }
+
+  // Network/connection errors
+  if (error.code === "ECONNREFUSED" || error.code === "ENOTFOUND") {
+    return new McpError(
+      ErrorCode.InternalError,
+      `Connection failed: Unable to reach Habitica servers. Please check your internet connection and try again.`
+    );
+  }
+
+  if (error.code === "ETIMEDOUT") {
+    return new McpError(
+      ErrorCode.InternalError,
+      `Request timeout: Habitica servers are taking too long to respond. Please try again later.`
+    );
+  }
+
+  // Handle Axios response errors (HTTP status codes)
+  if (error.response) {
+    const status = error.response.status;
+    const errorData = error.response.data;
+    const habiticaError = errorData?.error;
+    const habiticaMessage = errorData?.message;
+
+    switch (status) {
+      case 400: // Bad Request
+        if (habiticaError === "ChallengeValidationFailed") {
+          return new McpError(
+            ErrorCode.InvalidParams,
+            `Invalid challenge parameters: ${
+              habiticaMessage || "Please check your input parameters."
+            }`
+          );
+        }
+        if (habiticaError === "messageNotEnoughGold") {
+          return new McpError(
+            ErrorCode.InvalidRequest,
+            `Insufficient gold: You don't have enough gold to complete this action. Earn more gold by completing tasks.`
+          );
+        }
+        if (habiticaError === "messageHealthAlreadyMax") {
+          return new McpError(
+            ErrorCode.InvalidRequest,
+            `Health already full: Your health is already at maximum. No need to buy a health potion.`
+          );
+        }
+        if (habiticaError === "messageAlreadyOwnGear") {
+          return new McpError(
+            ErrorCode.InvalidRequest,
+            `Already owned: You already own this equipment. Check your inventory for existing items.`
+          );
+        }
+        if (habiticaError === "emptyReportBugMessage") {
+          return new McpError(
+            ErrorCode.InvalidParams,
+            `Missing message: A report message is required to submit feedback.`
+          );
+        }
+        if (habiticaError === "queryPageInteger") {
+          return new McpError(
+            ErrorCode.InvalidParams,
+            `Invalid page parameter: Page must be a positive integer.`
+          );
+        }
+        if (habiticaError === "groupIdRequired") {
+          return new McpError(
+            ErrorCode.InvalidParams,
+            `Group ID required: Please provide a valid group identifier.`
+          );
+        }
+        if (habiticaError === "chatIdRequired") {
+          return new McpError(
+            ErrorCode.InvalidParams,
+            `Chat ID required: Please provide a valid chat message identifier.`
+          );
+        }
+        if (habiticaMessage?.includes("validation failed")) {
+          return new McpError(
+            ErrorCode.InvalidParams,
+            `Validation error: ${habiticaMessage}. Please check that all required fields are provided and properly formatted.`
+          );
+        }
+        return new McpError(
+          ErrorCode.InvalidParams,
+          `Bad request: ${
+            habiticaMessage ||
+            "Invalid parameters provided. Please check your input and try again."
+          }`
+        );
+
+      case 401: // Unauthorized
+        if (
+          habiticaError === "NoAuthHeaders" ||
+          habiticaError === "NotAuthorized"
+        ) {
+          return new McpError(
+            ErrorCode.InvalidRequest,
+            `Authentication failed: ${
+              habiticaMessage ||
+              "Invalid or missing Habitica credentials. Please check your HABITICA_USER_ID and HABITICA_API_TOKEN."
+            }`
+          );
+        }
+        if (habiticaError === "NoAccount") {
+          return new McpError(
+            ErrorCode.InvalidRequest,
+            `Account not found: No Habitica account found with the provided credentials. Please verify your user ID and API token.`
+          );
+        }
+        if (habiticaError === "MustBeChallengeLeader") {
+          return new McpError(
+            ErrorCode.InvalidRequest,
+            `Permission denied: Only the challenge leader can perform this action.`
+          );
+        }
+        if (habiticaError === "NotAdmin") {
+          return new McpError(
+            ErrorCode.InvalidRequest,
+            `Admin required: This action requires administrator privileges.`
+          );
+        }
+        if (habiticaError === "messageInsufficientGems") {
+          return new McpError(
+            ErrorCode.InvalidRequest,
+            `Insufficient gems: You don't have enough gems to complete this action. Purchase gems or complete tasks to earn more.`
+          );
+        }
+        if (habiticaError === "chatPriviledgesRevoked") {
+          return new McpError(
+            ErrorCode.InvalidRequest,
+            `Chat privileges revoked: Your chat privileges have been removed. Contact support if you believe this is an error.`
+          );
+        }
+        if (habiticaError === "CantAffordPrize") {
+          return new McpError(
+            ErrorCode.InvalidRequest,
+            `Cannot afford prize: You don't have enough gems to offer this challenge prize.`
+          );
+        }
+        return new McpError(
+          ErrorCode.InvalidRequest,
+          `Authorization failed: ${
+            habiticaMessage || "You are not authorized to perform this action."
+          }`
+        );
+
+      case 404: // Not Found
+        if (habiticaError === "TaskNotFound") {
+          return new McpError(
+            ErrorCode.InvalidParams,
+            `Task not found: The specified task does not exist or has been deleted. Use get_tasks to see available tasks.`
+          );
+        }
+        if (habiticaError === "UserNotFound") {
+          return new McpError(
+            ErrorCode.InvalidParams,
+            `User not found: The specified user does not exist.`
+          );
+        }
+        if (habiticaError === "GroupNotFound") {
+          return new McpError(
+            ErrorCode.InvalidParams,
+            `Group not found: The specified group does not exist or you don't have access to it.`
+          );
+        }
+        if (habiticaError === "ChallengeNotFound") {
+          return new McpError(
+            ErrorCode.InvalidParams,
+            `Challenge not found: The specified challenge does not exist or has been deleted.`
+          );
+        }
+        if (habiticaError === "QuestNotFound") {
+          return new McpError(
+            ErrorCode.InvalidParams,
+            `Quest not found: The specified quest does not exist or is not available.`
+          );
+        }
+        if (habiticaError === "ChecklistNotFound") {
+          return new McpError(
+            ErrorCode.InvalidParams,
+            `Checklist item not found: The specified checklist item does not exist. Use get_task_checklist to see available items.`
+          );
+        }
+        if (habiticaError === "MessageNotFound") {
+          return new McpError(
+            ErrorCode.InvalidParams,
+            `Message not found: The specified message does not exist or has been deleted.`
+          );
+        }
+        if (habiticaError === "TagNotFound") {
+          return new McpError(
+            ErrorCode.InvalidParams,
+            `Tag not found: The specified tag does not exist. Use get_tags to see available tags.`
+          );
+        }
+        if (habiticaError === "PartyNotFound") {
+          return new McpError(
+            ErrorCode.InvalidParams,
+            `Party not found: You are not currently in a party or the party does not exist.`
+          );
+        }
+        if (habiticaError === "AlreadyFlagged") {
+          return new McpError(
+            ErrorCode.InvalidRequest,
+            `Already flagged: This content has already been flagged by you.`
+          );
+        }
+        return new McpError(
+          ErrorCode.InvalidParams,
+          `Not found: ${
+            habiticaMessage || "The requested resource could not be found."
+          }`
+        );
+
+      case 429: // Too Many Requests
+        return new McpError(
+          ErrorCode.InvalidRequest,
+          `Rate limit exceeded: Too many requests. Please wait a moment before trying again.`
+        );
+
+      case 500: // Internal Server Error
+        return new McpError(
+          ErrorCode.InternalError,
+          `Habitica server error: The Habitica servers are experiencing issues. Please try again later.`
+        );
+
+      case 502: // Bad Gateway
+      case 503: // Service Unavailable
+      case 504: // Gateway Timeout
+        return new McpError(
+          ErrorCode.InternalError,
+          `Service unavailable: Habitica servers are temporarily unavailable. Please try again later.`
+        );
+
+      default:
+        return new McpError(
+          ErrorCode.InternalError,
+          `HTTP ${status}: ${
+            habiticaMessage ||
+            error.message ||
+            "An unexpected error occurred while communicating with Habitica."
+          }`
+        );
+    }
+  }
+
+  // Handle non-HTTP errors (e.g., parsing errors, unexpected responses)
+  if (error.message?.includes("JSON")) {
+    return new McpError(
+      ErrorCode.InternalError,
+      `Response parsing error: Received invalid response from Habitica. This may be a temporary server issue.`
+    );
+  }
+
+  // Generic fallback for any other errors
+  return new McpError(
+    ErrorCode.InternalError,
+    `Unexpected error in ${toolName}: ${
+      error.message || "An unknown error occurred. Please try again."
+    }`
+  );
+}
+
 // Register tool call handler
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
@@ -781,16 +1098,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
     }
   } catch (error) {
-    if (error instanceof McpError) {
-      throw error;
-    }
-
-    const errorMessage =
-      error.response?.data?.message || error.message || "Unknown error";
-    throw new McpError(
-      ErrorCode.InternalError,
-      `Habitica API error: ${errorMessage}`
-    );
+    throw createHabiticaError(error, name);
   }
 });
 
@@ -838,24 +1146,35 @@ async function createTask(taskData) {
 }
 
 async function scoreTask(taskId, direction = "up") {
-  const response = await habiticaClient.post(
-    `/tasks/${taskId}/score/${direction}`
-  );
-  const result = response.data.data;
+  try {
+    const response = await habiticaClient.post(
+      `/tasks/${taskId}/score/${direction}`
+    );
+    const result = response.data.data;
 
-  let message = `Task completed! `;
-  if (result.exp) message += `Gained ${result.exp} experience `;
-  if (result.gp) message += `Gained ${result.gp} gold `;
-  if (result.lvl) message += `Level up to ${result.lvl}! `;
+    let message = `Task completed! `;
+    if (result.exp) message += `Gained ${result.exp} experience `;
+    if (result.gp) message += `Gained ${result.gp} gold `;
+    if (result.lvl) message += `Level up to ${result.lvl}! `;
 
-  return {
-    content: [
-      {
-        type: "text",
-        text: message,
-      },
-    ],
-  };
+    return {
+      content: [
+        {
+          type: "text",
+          text: message,
+        },
+      ],
+    };
+  } catch (error) {
+    // Add specific context for task scoring errors
+    if (error.response?.status === 404) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Task not found: Task with ID '${taskId}' does not exist. Use get_tasks to see your available tasks.`
+      );
+    }
+    throw error; // Re-throw to be handled by the main error handler
+  }
 }
 
 async function updateTask(taskId, updates) {
@@ -899,17 +1218,34 @@ async function getStats() {
 }
 
 async function buyReward(key) {
-  const response = await habiticaClient.post(`/user/buy/${key}`);
-  const result = response.data.data;
+  try {
+    const response = await habiticaClient.post(`/user/buy/${key}`);
+    const result = response.data.data;
 
-  return {
-    content: [
-      {
-        type: "text",
-        text: `Successfully bought reward! Remaining gold: ${result.gp}`,
-      },
-    ],
-  };
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Successfully bought reward! Remaining gold: ${result.gp}`,
+        },
+      ],
+    };
+  } catch (error) {
+    // Add specific context for purchase errors
+    if (error.response?.data?.error === "messageNotEnoughGold") {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        `Insufficient gold: You don't have enough gold to buy this reward. Complete more tasks to earn gold, or choose a less expensive reward.`
+      );
+    }
+    if (error.response?.status === 404) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Reward not found: Reward with key '${key}' does not exist. Use get_tasks with type 'rewards' to see your available rewards.`
+      );
+    }
+    throw error; // Re-throw to be handled by the main error handler
+  }
 }
 
 async function getInventory() {
@@ -926,19 +1262,45 @@ async function getInventory() {
 }
 
 async function castSpell(spellId, targetId) {
-  const endpoint = targetId
-    ? `/user/class/cast/${spellId}?targetId=${targetId}`
-    : `/user/class/cast/${spellId}`;
-  const response = await habiticaClient.post(endpoint);
+  try {
+    const endpoint = targetId
+      ? `/user/class/cast/${spellId}?targetId=${targetId}`
+      : `/user/class/cast/${spellId}`;
+    const response = await habiticaClient.post(endpoint);
 
-  return {
-    content: [
-      {
-        type: "text",
-        text: `Successfully cast spell: ${spellId}`,
-      },
-    ],
-  };
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Successfully cast spell: ${spellId}`,
+        },
+      ],
+    };
+  } catch (error) {
+    // Add specific context for spell casting errors
+    if (
+      error.response?.data?.error === "Not enough mana" ||
+      error.response?.data?.message?.includes("mana")
+    ) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        `Insufficient mana: You don't have enough mana to cast '${spellId}'. Complete more tasks to gain mana, or wait for it to regenerate.`
+      );
+    }
+    if (error.response?.status === 404 && targetId) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Target not found: User '${targetId}' not found or not accessible. Make sure the target user exists and you have permission to target them.`
+      );
+    }
+    if (error.response?.status === 404) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Spell not found: Spell '${spellId}' does not exist or is not available for your class. Check your class abilities.`
+      );
+    }
+    throw error; // Re-throw to be handled by the main error handler
+  }
 }
 
 async function getTags() {
@@ -982,38 +1344,84 @@ async function getPets() {
 }
 
 async function feedPet(pet, food) {
-  const response = await habiticaClient.post(`/user/feed/${pet}/${food}`);
-  const result = response.data.data;
+  try {
+    const response = await habiticaClient.post(`/user/feed/${pet}/${food}`);
+    const result = response.data.data;
 
-  let message = `Successfully fed pet ${pet}! `;
-  if (result.message) {
-    message += result.message;
+    let message = `Successfully fed pet ${pet}! `;
+    if (result.message) {
+      message += result.message;
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: message,
+        },
+      ],
+    };
+  } catch (error) {
+    // Add specific context for pet feeding errors
+    if (error.response?.data?.error === "PetNotOwned") {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Pet not owned: You don't own a pet named '${pet}'. Use get_pets to see your available pets.`
+      );
+    }
+    if (error.response?.data?.error === "FoodNotOwned") {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Food not available: You don't have any '${food}' in your inventory. Use get_inventory to see your available food items.`
+      );
+    }
+    if (error.response?.data?.error === "notEnoughFood") {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        `Insufficient food: You don't have enough '${food}' to feed your pet. Check your inventory for available quantities.`
+      );
+    }
+    throw error; // Re-throw to be handled by the main error handler
   }
-
-  return {
-    content: [
-      {
-        type: "text",
-        text: message,
-      },
-    ],
-  };
 }
 
 async function hatchPet(egg, hatchingPotion) {
-  const response = await habiticaClient.post(
-    `/user/hatch/${egg}/${hatchingPotion}`
-  );
-  const result = response.data.data;
+  try {
+    const response = await habiticaClient.post(
+      `/user/hatch/${egg}/${hatchingPotion}`
+    );
+    const result = response.data.data;
 
-  return {
-    content: [
-      {
-        type: "text",
-        text: `Successfully hatched pet! Got ${egg}-${hatchingPotion}`,
-      },
-    ],
-  };
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Successfully hatched pet! Got ${egg}-${hatchingPotion}`,
+        },
+      ],
+    };
+  } catch (error) {
+    // Add specific context for pet hatching errors
+    if (error.response?.data?.error === "messageAlreadyPet") {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        `Pet already owned: You already have a '${egg}-${hatchingPotion}' pet. Try a different combination of egg and hatching potion.`
+      );
+    }
+    if (error.response?.data?.error === "messageMissingEggPotion") {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Missing ingredients: You don't have the required '${egg}' egg or '${hatchingPotion}' hatching potion. Check your inventory for available items.`
+      );
+    }
+    if (error.response?.data?.error === "messageInvalidEggPotionCombo") {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Invalid combination: Cannot combine '${egg}' egg with '${hatchingPotion}' hatching potion. Check the valid combinations in the game.`
+      );
+    }
+    throw error; // Re-throw to be handled by the main error handler
+  }
 }
 
 async function getMounts() {
@@ -1130,22 +1538,33 @@ async function getTaskChecklist(taskId) {
 }
 
 async function addChecklistItem(taskId, text) {
-  const response = await habiticaClient.post(`/tasks/${taskId}/checklist`, {
-    text,
-  });
-  const item = response.data.data;
+  try {
+    const response = await habiticaClient.post(`/tasks/${taskId}/checklist`, {
+      text,
+    });
+    const item = response.data.data;
 
-  return {
-    content: [
-      {
-        type: "text",
-        text: t(
-          `Successfully added checklist item: ${item.text} (ID: ${item.id})`,
-          `Successfully added checklist item: ${item.text} (ID: ${item.id})`
-        ),
-      },
-    ],
-  };
+    return {
+      content: [
+        {
+          type: "text",
+          text: t(
+            `Successfully added checklist item: ${item.text} (ID: ${item.id})`,
+            `Successfully added checklist item: ${item.text} (ID: ${item.id})`
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    // Add specific context for checklist errors
+    if (error.response?.status === 404) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Task not found: Task with ID '${taskId}' does not exist. Use get_tasks to see your available tasks.`
+      );
+    }
+    throw error; // Re-throw to be handled by the main error handler
+  }
 }
 
 async function updateChecklistItem(taskId, itemId, updates) {
@@ -1169,19 +1588,39 @@ async function updateChecklistItem(taskId, itemId, updates) {
 }
 
 async function deleteChecklistItem(taskId, itemId) {
-  await habiticaClient.delete(`/tasks/${taskId}/checklist/${itemId}`);
+  try {
+    await habiticaClient.delete(`/tasks/${taskId}/checklist/${itemId}`);
 
-  return {
-    content: [
-      {
-        type: "text",
-        text: t(
-          `Successfully deleted checklist item (ID: ${itemId})`,
-          `Successfully deleted checklist item (ID: ${itemId})`
-        ),
-      },
-    ],
-  };
+    return {
+      content: [
+        {
+          type: "text",
+          text: t(
+            `Successfully deleted checklist item (ID: ${itemId})`,
+            `Successfully deleted checklist item (ID: ${itemId})`
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    // Add specific context for checklist deletion errors
+    if (error.response?.status === 404) {
+      const errorData = error.response.data;
+      if (errorData?.error === "TaskNotFound") {
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          `Task not found: Task with ID '${taskId}' does not exist. Use get_tasks to see your available tasks.`
+        );
+      }
+      if (errorData?.error === "ChecklistNotFound") {
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          `Checklist item not found: Item with ID '${itemId}' does not exist in this task. Use get_task_checklist to see available items.`
+        );
+      }
+    }
+    throw error; // Re-throw to be handled by the main error handler
+  }
 }
 
 async function scoreChecklistItem(taskId, itemId) {
@@ -1208,6 +1647,9 @@ async function runServer() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("Habitica MCP server started");
+
+  // Validate credentials in the background
+  validateCredentials();
 }
 
 runServer().catch((error) => {

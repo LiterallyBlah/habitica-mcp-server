@@ -7,6 +7,7 @@ A Model Context Protocol (MCP) server that lets AI assistants seamlessly interac
 ## ✨ Features
 
 ### 🎮 Core Gameplay Features
+
 - 📋 **Smart task management** – create / view / update / delete all task types
 - ✅ **Checklist management** – add, update, delete and score checklist items within tasks
 - 🎯 **Habit tracking** – record habit completions and build healthy routines
@@ -16,12 +17,14 @@ A Model Context Protocol (MCP) server that lets AI assistants seamlessly interac
 - ⚡ **Skill system** – cast class skills to enhance gameplay
 
 ### 📊 Data-oriented Features
+
 - 👤 **User profile** – fetch detailed user information and stats
 - 🏷️ **Tag management** – create and manage tags for better organisation
 - 📬 **Notification centre** – read and manage system notifications
 - 📦 **Inventory** – list every item and piece of equipment you own
 
 ### 🤖 AI Integration Highlights
+
 - 🧠 **Natural-language control** – operate Habitica via conversation
 - 📝 **Task suggestions** – AI can create tasks on demand
 - 📈 **Progress reporting** – automatically track and summarise progress
@@ -30,6 +33,7 @@ A Model Context Protocol (MCP) server that lets AI assistants seamlessly interac
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
 - npm or yarn
 - A valid Habitica account
@@ -37,12 +41,14 @@ A Model Context Protocol (MCP) server that lets AI assistants seamlessly interac
 ### Installation
 
 1. **Clone the repo**
+
 ```bash
 git clone https://github.com/ibreaker/habitica-mcp-server.git
 cd habitica-mcp-server
 ```
 
 2. **Install dependencies**
+
 ```bash
 npm install
 ```
@@ -50,6 +56,7 @@ npm install
 3. **Set API credentials** (see next section)
 
 4. **Start the server**
+
 ```bash
 npm start
 ```
@@ -57,6 +64,7 @@ npm start
 ## ⚙️ Configuration
 
 ### Get Habitica API credentials
+
 1. Log into [Habitica](https://habitica.com)
 2. Click your avatar → **Settings**
 3. Open the **API** tab
@@ -65,12 +73,14 @@ npm start
 ### Environment variables
 
 **Method A: export variables**
+
 ```bash
 export HABITICA_USER_ID="your-user-id"
 export HABITICA_API_TOKEN="your-api-token"
 ```
 
 **Method B: .env file**
+
 ```bash
 HABITICA_USER_ID=your-user-id
 HABITICA_API_TOKEN=your-api-token
@@ -81,6 +91,7 @@ HABITICA_API_TOKEN=your-api-token
 ## 🎯 Usage
 
 ### Start the server
+
 ```bash
 # Production
 npm start
@@ -92,6 +103,7 @@ npm run dev
 ### MCP client integration
 
 The server follows the MCP spec and works with any AI client that supports MCP. Example Claude Desktop config:
+
 ```json
 {
   "mcpServers": {
@@ -101,7 +113,7 @@ The server follows the MCP spec and works with any AI client that supports MCP. 
       "env": {
         "HABITICA_USER_ID": "your-id",
         "HABITICA_API_TOKEN": "your-token",
-        "MCP_LANG": "en"  // or zh-CN
+        "MCP_LANG": "en" // or zh-CN
       }
     }
   }
@@ -109,6 +121,7 @@ The server follows the MCP spec and works with any AI client that supports MCP. 
 ```
 
 ### Example dialogue
+
 ```
 User: "Create a habit for learning Python"
 AI:   "Sure, the habit has been created!"
@@ -126,11 +139,13 @@ AI:   "Great job! The workout is logged."
 ## 🛠️ Available Tools
 
 ### User Related
+
 - `get_user_profile`: Get user profile information
 - `get_stats`: Get user statistics
 - `get_inventory`: Get inventory list
 
 ### Task Management
+
 - `get_tasks`: Get task list (can specify type: habits, dailys, todos, rewards)
 - `create_task`: Create new task
 - `update_task`: Update task
@@ -138,6 +153,7 @@ AI:   "Great job! The workout is logged."
 - `score_task`: Complete task or record habit
 
 ### Checklist Management
+
 - `get_task_checklist`: Get checklist items for a task
 - `add_checklist_item`: Add checklist item to task
 - `update_checklist_item`: Update checklist item
@@ -145,10 +161,12 @@ AI:   "Great job! The workout is logged."
 - `score_checklist_item`: Score checklist item (mark complete/incomplete)
 
 ### Tag Management
+
 - `get_tags`: Get tag list
 - `create_tag`: Create new tag
 
 ### Pets and Mounts
+
 - `get_pets`: Get pet list
 - `feed_pet`: Feed pet
 - `hatch_pet`: Hatch pet
@@ -156,20 +174,24 @@ AI:   "Great job! The workout is logged."
 - `equip_item`: Equip pet, mount or equipment
 
 ### Shop and Purchases
+
 - `get_shop`: Get shop item list
 - `buy_item`: Buy shop item
 - `buy_reward`: Buy reward
 
 ### Notification Management
+
 - `get_notifications`: Get notification list
 - `read_notification`: Mark notification as read
 
 ### Skill System
+
 - `cast_spell`: Cast spell
 
 ## 📖 API Usage Examples
 
 ### Create Task
+
 ```json
 {
   "type": "todo",
@@ -178,14 +200,15 @@ AI:   "Great job! The workout is logged."
   "difficulty": 1.5,
   "priority": 2,
   "checklist": [
-    {"text": "Write API documentation", "completed": false},
-    {"text": "Create user guide", "completed": false},
-    {"text": "Review and proofread", "completed": false}
+    { "text": "Write API documentation", "completed": false },
+    { "text": "Create user guide", "completed": false },
+    { "text": "Review and proofread", "completed": false }
   ]
 }
 ```
 
 ### Complete Task
+
 ```json
 {
   "taskId": "task-id-here",
@@ -194,6 +217,7 @@ AI:   "Great job! The workout is logged."
 ```
 
 ### Get Specific Task Type
+
 ```json
 {
   "type": "todos"
@@ -201,6 +225,7 @@ AI:   "Great job! The workout is logged."
 ```
 
 ### Pet Management
+
 ```json
 {
   "pet": "Wolf-Base",
@@ -209,6 +234,7 @@ AI:   "Great job! The workout is logged."
 ```
 
 ### Buy Item
+
 ```json
 {
   "itemKey": "armor_warrior_1",
@@ -217,6 +243,7 @@ AI:   "Great job! The workout is logged."
 ```
 
 ### Checklist Management
+
 ```json
 // Add checklist item
 {
@@ -262,17 +289,47 @@ AI:   "Great job! The workout is logged."
 
 ## 🔧 Troubleshooting
 
+### Improved Error Handling
+
+This server now provides enhanced error messages to help you quickly identify and resolve issues:
+
+**Authentication Errors**
+
+- Clear guidance on invalid API credentials
+- Helpful links to get your Habitica API tokens
+- Automatic validation on server startup
+
+**Task Management Errors**
+
+- Specific error messages when tasks aren't found
+- Guidance on how to find valid task IDs
+- Clear indication of required permissions
+
+**Resource Errors**
+
+- Detailed feedback for insufficient gold/gems/mana
+- Helpful suggestions on how to earn more resources
+- Clear indication of what items are missing from inventory
+
+**Network Errors**
+
+- Connection timeout detection with retry suggestions
+- Server availability status with helpful guidance
+- Rate limiting detection with wait time recommendations
+
 ### Common Issues
 
 **Issue**: Server startup failed
+
 ```
-Solution: 
+Solution:
 1. Check Node.js version is 18+
 2. Confirm environment variables are set correctly
 3. Verify API credentials are valid
 ```
 
 **Issue**: API call failed
+
 ```
 Solution:
 1. Check network connection
@@ -281,6 +338,7 @@ Solution:
 ```
 
 **Issue**: Task or pet not found
+
 ```
 Solution:
 1. Confirm task ID is correct
@@ -289,12 +347,14 @@ Solution:
 ```
 
 ### Debug Mode
+
 ```bash
-# Enable verbose logging
+# Enable verbose logging for detailed error information
 DEBUG=* npm start
 ```
 
 ### Get Help
+
 - 📚 Check [Habitica API Documentation](https://habitica.com/apidoc/)
 - 🐛 Submit [Issues](https://github.com/ibreaker/habitica-mcp-server/issues)
 
@@ -303,6 +363,7 @@ DEBUG=* npm start
 We welcome all forms of contributions!
 
 ### How to Contribute
+
 1. Fork this project
 2. Create feature branch (`git checkout -b feature/AmazingFeature`)
 3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
@@ -310,6 +371,7 @@ We welcome all forms of contributions!
 5. Create Pull Request
 
 ### Development Guidelines
+
 - Follow existing code style
 - Add appropriate tests
 - Update relevant documentation
