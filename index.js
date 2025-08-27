@@ -90,7 +90,10 @@ const server = new Server(
 const allTools = [
   {
     name: "get_user_profile",
-    description: t("Get user profile", "Get user profile"),
+    description: t(
+      "Retrieve complete user profile information including stats, preferences, and account details from Habitica",
+      "Retrieve complete user profile information including stats, preferences, and account details from Habitica"
+    ),
     inputSchema: {
       type: "object",
       properties: {},
@@ -98,51 +101,69 @@ const allTools = [
   },
   {
     name: "get_tasks",
-    description: t("Get tasks list", "Get tasks list"),
+    description: t(
+      "Fetch user's tasks from Habitica. Optionally filter by task type (habits, dailys, todos, rewards). Returns all tasks if no type specified",
+      "Fetch user's tasks from Habitica. Optionally filter by task type (habits, dailys, todos, rewards). Returns all tasks if no type specified"
+    ),
     inputSchema: {
       type: "object",
       properties: {
         type: {
           type: "string",
           enum: ["habits", "dailys", "todos", "rewards"],
-          description: t("Task type", "Task type"),
+          description: t(
+            "Filter tasks by type: 'habits' for repeated behaviors, 'dailys' for daily recurring tasks, 'todos' for one-time tasks, 'rewards' for custom rewards",
+            "Filter tasks by type: 'habits' for repeated behaviors, 'dailys' for daily recurring tasks, 'todos' for one-time tasks, 'rewards' for custom rewards"
+          ),
         },
       },
     },
   },
   {
     name: "create_task",
-    description: t("Create new task", "Create new task"),
+    description: t(
+      "Create a new task in Habitica. Supports all task types: habits (positive/negative behaviors), dailies (recurring tasks), todos (one-time tasks), and rewards (custom purchases)",
+      "Create a new task in Habitica. Supports all task types: habits (positive/negative behaviors), dailies (recurring tasks), todos (one-time tasks), and rewards (custom purchases)"
+    ),
     inputSchema: {
       type: "object",
       properties: {
         type: {
           type: "string",
           enum: ["habit", "daily", "todo", "reward"],
-          description: t("Task type", "Task type"),
+          description: t(
+            "Task type: 'habit' for behaviors to track, 'daily' for recurring tasks, 'todo' for one-time tasks, 'reward' for custom rewards to purchase",
+            "Task type: 'habit' for behaviors to track, 'daily' for recurring tasks, 'todo' for one-time tasks, 'reward' for custom rewards to purchase"
+          ),
         },
         text: {
           type: "string",
-          description: t("Task title", "Task title"),
+          description: t(
+            "The main title/name of the task that will be displayed",
+            "The main title/name of the task that will be displayed"
+          ),
         },
         notes: {
           type: "string",
-          description: t("Task notes", "Task notes"),
+          description: t(
+            "Optional detailed description or notes about the task",
+            "Optional detailed description or notes about the task"
+          ),
         },
         difficulty: {
           type: "number",
           enum: [0.1, 1, 1.5, 2],
           description: t(
-            "Difficulty (0.1=easy, 1=medium, 1.5=hard, 2=very hard)",
-            "Difficulty (0.1=easy, 1=medium, 1.5=hard, 2=very hard)"
+            "Task difficulty affecting rewards: 0.1=trivial (easy), 1=easy (default), 1.5=medium, 2=hard (more rewards)",
+            "Task difficulty affecting rewards: 0.1=trivial (easy), 1=easy (default), 1.5=medium, 2=hard (more rewards)"
           ),
         },
         priority: {
           type: "number",
           enum: [0.1, 1, 1.5, 2],
           description: t(
-            "Priority (0.1=low, 1=med, 1.5=high, 2=urgent)",
-            "Priority (0.1=low, 1=med, 1.5=high, 2=urgent)"
+            "Task priority affecting damage when missed: 0.1=low, 1=medium (default), 1.5=high, 2=critical (more damage if not completed)",
+            "Task priority affecting damage when missed: 0.1=low, 1=medium (default), 1.5=high, 2=critical (more damage if not completed)"
           ),
         },
         checklist: {
@@ -152,17 +173,26 @@ const allTools = [
             properties: {
               text: {
                 type: "string",
-                description: t("Checklist item text", "Checklist item text"),
+                description: t(
+                  "Text content of the checklist item",
+                  "Text content of the checklist item"
+                ),
               },
               completed: {
                 type: "boolean",
-                description: t("Completed status", "Completed status"),
+                description: t(
+                  "Whether this checklist item starts as completed (default: false)",
+                  "Whether this checklist item starts as completed (default: false)"
+                ),
                 default: false,
               },
             },
             required: ["text"],
           },
-          description: t("Checklist items", "Checklist items"),
+          description: t(
+            "Optional array of sub-tasks/checklist items to add to this task",
+            "Optional array of sub-tasks/checklist items to add to this task"
+          ),
         },
       },
       required: ["type", "text"],
@@ -170,20 +200,26 @@ const allTools = [
   },
   {
     name: "score_task",
-    description: t("Score task / habit", "Score task / habit"),
+    description: t(
+      "Mark a task as completed or score a habit. For todos/dailies, this marks completion and grants rewards. For habits, specify direction for positive/negative scoring",
+      "Mark a task as completed or score a habit. For todos/dailies, this marks completion and grants rewards. For habits, specify direction for positive/negative scoring"
+    ),
     inputSchema: {
       type: "object",
       properties: {
         taskId: {
           type: "string",
-          description: t("Task ID", "Task ID"),
+          description: t(
+            "Unique identifier of the task to score (obtained from get_tasks)",
+            "Unique identifier of the task to score (obtained from get_tasks)"
+          ),
         },
         direction: {
           type: "string",
           enum: ["up", "down"],
           description: t(
-            "Direction (up=positive, down=negative, habits only)",
-            "Direction (up=positive, down=negative, habits only)"
+            "Scoring direction for habits: 'up' for positive behavior (rewards), 'down' for negative behavior (penalties). Not needed for todos/dailies",
+            "Scoring direction for habits: 'up' for positive behavior (rewards), 'down' for negative behavior (penalties). Not needed for todos/dailies"
           ),
         },
       },
@@ -192,25 +228,40 @@ const allTools = [
   },
   {
     name: "update_task",
-    description: t("Update task", "Update task"),
+    description: t(
+      "Modify an existing task's properties such as title, notes, or completion status. Only provide the fields you want to change",
+      "Modify an existing task's properties such as title, notes, or completion status. Only provide the fields you want to change"
+    ),
     inputSchema: {
       type: "object",
       properties: {
         taskId: {
           type: "string",
-          description: t("Task ID", "Task ID"),
+          description: t(
+            "Unique identifier of the task to update (obtained from get_tasks)",
+            "Unique identifier of the task to update (obtained from get_tasks)"
+          ),
         },
         text: {
           type: "string",
-          description: t("Task title", "Task title"),
+          description: t(
+            "New title/name for the task",
+            "New title/name for the task"
+          ),
         },
         notes: {
           type: "string",
-          description: t("Task notes", "Task notes"),
+          description: t(
+            "New description or notes for the task",
+            "New description or notes for the task"
+          ),
         },
         completed: {
           type: "boolean",
-          description: t("Completed flag", "Completed flag"),
+          description: t(
+            "Set completion status for todos (true=completed, false=incomplete)",
+            "Set completion status for todos (true=completed, false=incomplete)"
+          ),
         },
       },
       required: ["taskId"],
@@ -218,13 +269,19 @@ const allTools = [
   },
   {
     name: "delete_task",
-    description: t("Delete task", "Delete task"),
+    description: t(
+      "Permanently remove a task from Habitica. This action cannot be undone",
+      "Permanently remove a task from Habitica. This action cannot be undone"
+    ),
     inputSchema: {
       type: "object",
       properties: {
         taskId: {
           type: "string",
-          description: t("Task ID", "Task ID"),
+          description: t(
+            "Unique identifier of the task to delete (obtained from get_tasks)",
+            "Unique identifier of the task to delete (obtained from get_tasks)"
+          ),
         },
       },
       required: ["taskId"],
@@ -232,7 +289,10 @@ const allTools = [
   },
   {
     name: "get_stats",
-    description: t("Get user stats", "Get user stats"),
+    description: t(
+      "Retrieve user's character statistics including health, experience, mana, gold, level, and class information",
+      "Retrieve user's character statistics including health, experience, mana, gold, level, and class information"
+    ),
     inputSchema: {
       type: "object",
       properties: {},
@@ -240,13 +300,19 @@ const allTools = [
   },
   {
     name: "buy_reward",
-    description: t("Buy reward", "Buy reward"),
+    description: t(
+      "Purchase a custom reward using gold. This will deduct the reward's cost from your gold balance",
+      "Purchase a custom reward using gold. This will deduct the reward's cost from your gold balance"
+    ),
     inputSchema: {
       type: "object",
       properties: {
         key: {
           type: "string",
-          description: t("Reward key or ID", "Reward key or ID"),
+          description: t(
+            "The unique identifier or key of the reward to purchase (obtained from get_tasks with type 'rewards')",
+            "The unique identifier or key of the reward to purchase (obtained from get_tasks with type 'rewards')"
+          ),
         },
       },
       required: ["key"],
@@ -254,7 +320,10 @@ const allTools = [
   },
   {
     name: "get_inventory",
-    description: t("Get inventory", "Get inventory"),
+    description: t(
+      "Retrieve user's complete inventory including items, equipment, pets, mounts, food, eggs, hatching potions, and quest items",
+      "Retrieve user's complete inventory including items, equipment, pets, mounts, food, eggs, hatching potions, and quest items"
+    ),
     inputSchema: {
       type: "object",
       properties: {},
@@ -262,17 +331,26 @@ const allTools = [
   },
   {
     name: "cast_spell",
-    description: t("Cast spell", "Cast spell"),
+    description: t(
+      "Use a class-specific spell or skill. Requires sufficient mana and appropriate class. Optionally target another user or specific entity",
+      "Use a class-specific spell or skill. Requires sufficient mana and appropriate class. Optionally target another user or specific entity"
+    ),
     inputSchema: {
       type: "object",
       properties: {
         spellId: {
           type: "string",
-          description: t("Spell ID", "Spell ID"),
+          description: t(
+            "The unique identifier of the spell to cast (varies by class: mage, warrior, healer, rogue)",
+            "The unique identifier of the spell to cast (varies by class: mage, warrior, healer, rogue)"
+          ),
         },
         targetId: {
           type: "string",
-          description: t("Target ID (optional)", "Target ID (optional)"),
+          description: t(
+            "Optional target user ID for spells that affect other players (party members, etc.)",
+            "Optional target user ID for spells that affect other players (party members, etc.)"
+          ),
         },
       },
       required: ["spellId"],
@@ -280,7 +358,10 @@ const allTools = [
   },
   {
     name: "get_tags",
-    description: t("Get tags list", "Get tags list"),
+    description: t(
+      "Retrieve all user-created tags for organizing and categorizing tasks. Tags can be applied to any task type",
+      "Retrieve all user-created tags for organizing and categorizing tasks. Tags can be applied to any task type"
+    ),
     inputSchema: {
       type: "object",
       properties: {},
@@ -288,13 +369,19 @@ const allTools = [
   },
   {
     name: "create_tag",
-    description: t("Create tag", "Create tag"),
+    description: t(
+      "Create a new tag for organizing tasks. Tags help categorize and filter tasks by context, project, or any custom criteria",
+      "Create a new tag for organizing tasks. Tags help categorize and filter tasks by context, project, or any custom criteria"
+    ),
     inputSchema: {
       type: "object",
       properties: {
         name: {
           type: "string",
-          description: t("Tag name", "Tag name"),
+          description: t(
+            "Name of the new tag (e.g., 'Work', 'Health', 'Personal Project')",
+            "Name of the new tag (e.g., 'Work', 'Health', 'Personal Project')"
+          ),
         },
       },
       required: ["name"],
@@ -302,7 +389,8 @@ const allTools = [
   },
   {
     name: "get_pets",
-    description: "Get pets list",
+    description:
+      "Retrieve all pets owned by the user, including their current state and feed status. Pets are obtained by hatching eggs with potions",
     inputSchema: {
       type: "object",
       properties: {},
@@ -310,17 +398,20 @@ const allTools = [
   },
   {
     name: "feed_pet",
-    description: "Feed pet",
+    description:
+      "Feed food to a pet to increase its growth or transform it into a mount. Different foods have different effects on pets",
     inputSchema: {
       type: "object",
       properties: {
         pet: {
           type: "string",
-          description: "Pet key",
+          description:
+            "The key identifier of the pet to feed (e.g., 'Wolf-Base', 'Dragon-Red')",
         },
         food: {
           type: "string",
-          description: "Food key",
+          description:
+            "The key identifier of the food item to use (e.g., 'Meat', 'Milk', 'Potatoe')",
         },
       },
       required: ["pet", "food"],
@@ -328,17 +419,20 @@ const allTools = [
   },
   {
     name: "hatch_pet",
-    description: "Hatch pet",
+    description:
+      "Hatch a new pet by combining an egg with a hatching potion. This consumes both items and creates a new pet",
     inputSchema: {
       type: "object",
       properties: {
         egg: {
           type: "string",
-          description: "Egg key",
+          description:
+            "The key identifier of the egg to hatch (e.g., 'Wolf', 'Dragon', 'Cactus')",
         },
         hatchingPotion: {
           type: "string",
-          description: "Hatching potion key",
+          description:
+            "The key identifier of the hatching potion to use (e.g., 'Base', 'Red', 'Blue')",
         },
       },
       required: ["egg", "hatchingPotion"],
@@ -346,7 +440,8 @@ const allTools = [
   },
   {
     name: "get_mounts",
-    description: "Get mounts list",
+    description:
+      "Retrieve all mounts owned by the user. Mounts are obtained by feeding pets until they transform",
     inputSchema: {
       type: "object",
       properties: {},
@@ -354,18 +449,21 @@ const allTools = [
   },
   {
     name: "equip_item",
-    description: "Equip item",
+    description:
+      "Equip or unequip items such as armor, pets, mounts, or costume pieces to change your character's appearance and stats",
     inputSchema: {
       type: "object",
       properties: {
         type: {
           type: "string",
           enum: ["mount", "pet", "costume", "equipped"],
-          description: "Equipment type",
+          description:
+            "Category of equipment: 'mount' for riding, 'pet' for companion, 'costume' for cosmetic items, 'equipped' for stat-affecting gear",
         },
         key: {
           type: "string",
-          description: "Item key",
+          description:
+            "The unique identifier of the item to equip or 'null' to unequip the current item in that slot",
         },
       },
       required: ["type", "key"],
@@ -373,7 +471,8 @@ const allTools = [
   },
   {
     name: "get_notifications",
-    description: "Get notifications list",
+    description:
+      "Retrieve all pending notifications including party invites, quest updates, achievement notifications, and system messages",
     inputSchema: {
       type: "object",
       properties: {},
@@ -381,13 +480,15 @@ const allTools = [
   },
   {
     name: "read_notification",
-    description: "Mark notification as read",
+    description:
+      "Mark a specific notification as read to remove it from the notifications list",
     inputSchema: {
       type: "object",
       properties: {
         notificationId: {
           type: "string",
-          description: "Notification ID",
+          description:
+            "Unique identifier of the notification to mark as read (obtained from get_notifications)",
         },
       },
       required: ["notificationId"],
@@ -395,31 +496,36 @@ const allTools = [
   },
   {
     name: "get_shop",
-    description: "Get shop items",
+    description:
+      "Browse available items in various Habitica shops including seasonal items, quest scrolls, and special equipment",
     inputSchema: {
       type: "object",
       properties: {
         shopType: {
           type: "string",
           enum: ["market", "questShop", "timeTravelersShop", "seasonalShop"],
-          description: "Shop type",
+          description:
+            "Shop category: 'market' for basic items, 'questShop' for quest scrolls, 'timeTravelersShop' for past event items, 'seasonalShop' for current event items",
         },
       },
     },
   },
   {
     name: "buy_item",
-    description: "Buy shop item",
+    description:
+      "Purchase items from shops using gold or gems. Check shop availability first with get_shop",
     inputSchema: {
       type: "object",
       properties: {
         itemKey: {
           type: "string",
-          description: "Item key",
+          description:
+            "Unique identifier of the item to purchase (obtained from get_shop)",
         },
         quantity: {
           type: "number",
-          description: "Purchase quantity",
+          description:
+            "Number of items to purchase (default: 1). Some items have purchase limits",
           default: 1,
         },
       },
@@ -428,17 +534,26 @@ const allTools = [
   },
   {
     name: "add_checklist_item",
-    description: t("Add checklist item to task", "Add checklist item to task"),
+    description: t(
+      "Add a new checklist item (sub-task) to an existing task. Useful for breaking down complex tasks into smaller steps",
+      "Add a new checklist item (sub-task) to an existing task. Useful for breaking down complex tasks into smaller steps"
+    ),
     inputSchema: {
       type: "object",
       properties: {
         taskId: {
           type: "string",
-          description: t("Task ID", "Task ID"),
+          description: t(
+            "Unique identifier of the parent task to add the checklist item to (obtained from get_tasks)",
+            "Unique identifier of the parent task to add the checklist item to (obtained from get_tasks)"
+          ),
         },
         text: {
           type: "string",
-          description: t("Checklist item text", "Checklist item text"),
+          description: t(
+            "Description of the checklist item/sub-task to add",
+            "Description of the checklist item/sub-task to add"
+          ),
         },
       },
       required: ["taskId", "text"],
@@ -446,25 +561,40 @@ const allTools = [
   },
   {
     name: "update_checklist_item",
-    description: t("Update checklist item", "Update checklist item"),
+    description: t(
+      "Modify an existing checklist item's text or completion status. Only provide the fields you want to change",
+      "Modify an existing checklist item's text or completion status. Only provide the fields you want to change"
+    ),
     inputSchema: {
       type: "object",
       properties: {
         taskId: {
           type: "string",
-          description: t("Task ID", "Task ID"),
+          description: t(
+            "Unique identifier of the parent task containing the checklist item",
+            "Unique identifier of the parent task containing the checklist item"
+          ),
         },
         itemId: {
           type: "string",
-          description: t("Checklist item ID", "Checklist item ID"),
+          description: t(
+            "Unique identifier of the checklist item to update (obtained from get_task_checklist)",
+            "Unique identifier of the checklist item to update (obtained from get_task_checklist)"
+          ),
         },
         text: {
           type: "string",
-          description: t("Checklist item text", "Checklist item text"),
+          description: t(
+            "New text/description for the checklist item",
+            "New text/description for the checklist item"
+          ),
         },
         completed: {
           type: "boolean",
-          description: t("Completed status", "Completed status"),
+          description: t(
+            "Set completion status: true to mark as completed, false to mark as incomplete",
+            "Set completion status: true to mark as completed, false to mark as incomplete"
+          ),
         },
       },
       required: ["taskId", "itemId"],
@@ -472,17 +602,26 @@ const allTools = [
   },
   {
     name: "delete_checklist_item",
-    description: t("Delete checklist item", "Delete checklist item"),
+    description: t(
+      "Permanently remove a checklist item from a task. This action cannot be undone",
+      "Permanently remove a checklist item from a task. This action cannot be undone"
+    ),
     inputSchema: {
       type: "object",
       properties: {
         taskId: {
           type: "string",
-          description: t("Task ID", "Task ID"),
+          description: t(
+            "Unique identifier of the parent task containing the checklist item",
+            "Unique identifier of the parent task containing the checklist item"
+          ),
         },
         itemId: {
           type: "string",
-          description: t("Checklist item ID", "Checklist item ID"),
+          description: t(
+            "Unique identifier of the checklist item to delete (obtained from get_task_checklist)",
+            "Unique identifier of the checklist item to delete (obtained from get_task_checklist)"
+          ),
         },
       },
       required: ["taskId", "itemId"],
@@ -490,13 +629,19 @@ const allTools = [
   },
   {
     name: "get_task_checklist",
-    description: t("Get task checklist items", "Get task checklist items"),
+    description: t(
+      "Retrieve all checklist items for a specific task, showing their completion status and unique identifiers",
+      "Retrieve all checklist items for a specific task, showing their completion status and unique identifiers"
+    ),
     inputSchema: {
       type: "object",
       properties: {
         taskId: {
           type: "string",
-          description: t("Task ID", "Task ID"),
+          description: t(
+            "Unique identifier of the task whose checklist items to retrieve",
+            "Unique identifier of the task whose checklist items to retrieve"
+          ),
         },
       },
       required: ["taskId"],
@@ -505,19 +650,25 @@ const allTools = [
   {
     name: "score_checklist_item",
     description: t(
-      "Score checklist item (mark complete/incomplete)",
-      "Score checklist item (mark complete/incomplete)"
+      "Toggle completion status of a checklist item. If incomplete, marks as complete; if complete, marks as incomplete",
+      "Toggle completion status of a checklist item. If incomplete, marks as complete; if complete, marks as incomplete"
     ),
     inputSchema: {
       type: "object",
       properties: {
         taskId: {
           type: "string",
-          description: t("Task ID", "Task ID"),
+          description: t(
+            "Unique identifier of the parent task containing the checklist item",
+            "Unique identifier of the parent task containing the checklist item"
+          ),
         },
         itemId: {
           type: "string",
-          description: t("Checklist item ID", "Checklist item ID"),
+          description: t(
+            "Unique identifier of the checklist item to toggle (obtained from get_task_checklist)",
+            "Unique identifier of the checklist item to toggle (obtained from get_task_checklist)"
+          ),
         },
       },
       required: ["taskId", "itemId"],
