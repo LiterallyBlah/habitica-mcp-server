@@ -191,6 +191,13 @@ const allTools = [
     inputSchema: {
       type: "object",
       properties: {
+        text: {
+          type: "string",
+          description: t(
+            "The text to be displayed for the task",
+            "The text to be displayed for the task"
+          ),
+        },
         type: {
           type: "string",
           enum: ["habit", "daily", "todo", "reward"],
@@ -199,34 +206,26 @@ const allTools = [
             "Task type: 'habit' for behaviors to track, 'daily' for recurring tasks, 'todo' for one-time tasks, 'reward' for custom rewards to purchase"
           ),
         },
-        text: {
+        tags: {
+          type: "array",
+          items: {
+            type: "string",
+          },
+          description: t(
+            "Array of UUIDs of tags to assign to this task",
+            "Array of UUIDs of tags to assign to this task"
+          ),
+        },
+        alias: {
           type: "string",
-          description: t(
-            "The main title/name of the task that will be displayed",
-            "The main title/name of the task that will be displayed"
-          ),
+          description: t("Alias to assign to task", "Alias to assign to task"),
         },
-        notes: {
+        attribute: {
           type: "string",
+          enum: ["str", "int", "per", "con"],
           description: t(
-            "Optional detailed description or notes about the task",
-            "Optional detailed description or notes about the task"
-          ),
-        },
-        difficulty: {
-          type: "number",
-          enum: [0.1, 1, 1.5, 2],
-          description: t(
-            "Task difficulty affecting rewards: 0.1=trivial (easy), 1=easy (default), 1.5=medium, 2=hard (more rewards)",
-            "Task difficulty affecting rewards: 0.1=trivial (easy), 1=easy (default), 1.5=medium, 2=hard (more rewards)"
-          ),
-        },
-        priority: {
-          type: "number",
-          enum: [0.1, 1, 1.5, 2],
-          description: t(
-            "Task priority affecting damage when missed: 0.1=low, 1=medium (default), 1.5=high, 2=critical (more damage if not completed)",
-            "Task priority affecting damage when missed: 0.1=low, 1=medium (default), 1.5=high, 2=critical (more damage if not completed)"
+            "User's attribute to use: 'str' (strength), 'int' (intelligence), 'per' (perception), 'con' (constitution)",
+            "User's attribute to use: 'str' (strength), 'int' (intelligence), 'per' (perception), 'con' (constitution)"
           ),
         },
         checklist: {
@@ -253,12 +252,163 @@ const allTools = [
             required: ["text"],
           },
           description: t(
-            "Optional array of sub-tasks/checklist items to add to this task",
-            "Optional array of sub-tasks/checklist items to add to this task"
+            'Array of checklist items. Example: [{"text":"buy tools", "completed":true}, {"text":"build shed", "completed":false}]',
+            'Array of checklist items. Example: [{"text":"buy tools", "completed":true}, {"text":"build shed", "completed":false}]'
           ),
         },
+        collapseChecklist: {
+          type: "boolean",
+          description: t(
+            "Determines if a checklist will be displayed (default: false)",
+            "Determines if a checklist will be displayed (default: false)"
+          ),
+          default: false,
+        },
+        notes: {
+          type: "string",
+          description: t(
+            "Extra notes for the task",
+            "Extra notes for the task"
+          ),
+        },
+        date: {
+          type: "string",
+          format: "date",
+          description: t(
+            "Due date to be shown in task list. Only valid for type 'todo'",
+            "Due date to be shown in task list. Only valid for type 'todo'"
+          ),
+        },
+        priority: {
+          type: "number",
+          enum: [0.1, 1, 1.5, 2],
+          description: t(
+            "Difficulty: 0.1=Trivial, 1=Easy (default), 1.5=Medium, 2=Hard",
+            "Difficulty: 0.1=Trivial, 1=Easy (default), 1.5=Medium, 2=Hard"
+          ),
+          default: 1,
+        },
+        reminders: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: {
+                type: "string",
+                description: t(
+                  "UUID for the reminder",
+                  "UUID for the reminder"
+                ),
+              },
+              startDate: {
+                type: "string",
+                description: t(
+                  "Start date for the reminder",
+                  "Start date for the reminder"
+                ),
+              },
+              time: {
+                type: "string",
+                description: t(
+                  "Time for the reminder",
+                  "Time for the reminder"
+                ),
+              },
+            },
+            required: ["id", "startDate", "time"],
+          },
+          description: t(
+            "Array of reminders with id, startDate and time",
+            "Array of reminders with id, startDate and time"
+          ),
+        },
+        frequency: {
+          type: "string",
+          enum: ["daily", "weekly", "monthly", "yearly"],
+          description: t(
+            "Frequency for daily tasks: 'daily', 'weekly' (default), 'monthly', 'yearly'. Only valid for type 'daily'",
+            "Frequency for daily tasks: 'daily', 'weekly' (default), 'monthly', 'yearly'. Only valid for type 'daily'"
+          ),
+          default: "weekly",
+        },
+        repeat: {
+          type: "object",
+          description: t(
+            "Days of the week to repeat. Only valid for type 'daily' with frequency 'weekly'. Example: {\"f\":false,\"m\":false} to skip Mon and Fri",
+            "Days of the week to repeat. Only valid for type 'daily' with frequency 'weekly'. Example: {\"f\":false,\"m\":false} to skip Mon and Fri"
+          ),
+        },
+        everyX: {
+          type: "number",
+          description: t(
+            "Number of days until this daily task is available again. Only valid for type 'daily' (default: 1)",
+            "Number of days until this daily task is available again. Only valid for type 'daily' (default: 1)"
+          ),
+          default: 1,
+        },
+        streak: {
+          type: "number",
+          description: t(
+            "Number of days that the task has consecutively been checked off. Only valid for type 'daily' (default: 0)",
+            "Number of days that the task has consecutively been checked off. Only valid for type 'daily' (default: 0)"
+          ),
+          default: 0,
+        },
+        daysOfMonth: {
+          type: "array",
+          items: {
+            type: "integer",
+          },
+          description: t(
+            "Array of integers representing days of the month. Only valid for type 'daily'",
+            "Array of integers representing days of the month. Only valid for type 'daily'"
+          ),
+        },
+        weeksOfMonth: {
+          type: "array",
+          items: {
+            type: "integer",
+          },
+          description: t(
+            "Array of integers representing weeks of the month. Only valid for type 'daily'",
+            "Array of integers representing weeks of the month. Only valid for type 'daily'"
+          ),
+        },
+        startDate: {
+          type: "string",
+          format: "date",
+          description: t(
+            "Date when the task will first become available. Only valid for type 'daily'",
+            "Date when the task will first become available. Only valid for type 'daily'"
+          ),
+        },
+        up: {
+          type: "boolean",
+          description: t(
+            "If true, enables the '+' button for good habits. Only valid for type 'habit' (default: true)",
+            "If true, enables the '+' button for good habits. Only valid for type 'habit' (default: true)"
+          ),
+          default: true,
+        },
+        down: {
+          type: "boolean",
+          description: t(
+            "If true, enables the '-' button for bad habits. Only valid for type 'habit' (default: true)",
+            "If true, enables the '-' button for bad habits. Only valid for type 'habit' (default: true)"
+          ),
+          default: true,
+        },
+        value: {
+          type: "number",
+          description: t(
+            "The cost in gold of the reward. Should be greater than or equal to 0. Only valid for type 'reward' (default: 0)",
+            "The cost in gold of the reward. Should be greater than or equal to 0. Only valid for type 'reward' (default: 0)"
+          ),
+          default: 0,
+          minimum: 0,
+        },
       },
-      required: ["type", "text"],
+      required: ["text", "type"],
     },
   },
   {
