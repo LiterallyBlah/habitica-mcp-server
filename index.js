@@ -24,27 +24,27 @@ setLanguage(process.env.MCP_LANG || process.env.LANG || "en");
 
 // Tool configuration - set to false to disable tools
 const TOOL_CONFIG = {
-  get_user_profile: true,
+  get_user_profile: false,
   get_tasks: true,
   create_task: true,
   score_task: true,
   update_task: true,
   delete_task: true,
-  get_stats: true,
-  buy_reward: true,
-  get_inventory: true,
-  cast_spell: true,
+  get_stats: false,
+  buy_reward: false,
+  get_inventory: false,
+  cast_spell: false,
   get_tags: true,
   create_tag: true,
-  get_pets: false, // Example: disabled by default
-  feed_pet: false, // Example: disabled by default
-  hatch_pet: false, // Example: disabled by default
-  get_mounts: false, // Example: disabled by default
-  equip_item: true,
-  get_notifications: true,
-  read_notification: true,
-  get_shop: true,
-  buy_item: true,
+  get_pets: false,
+  feed_pet: false,
+  hatch_pet: false,
+  get_mounts: false,
+  equip_item: false,
+  get_notifications: false,
+  read_notification: false,
+  get_shop: false,
+  buy_item: false,
   add_checklist_item: true,
   update_checklist_item: true,
   delete_checklist_item: true,
