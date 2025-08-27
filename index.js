@@ -26,6 +26,7 @@ setLanguage(process.env.MCP_LANG || process.env.LANG || "en");
 const TOOL_CONFIG = {
   get_user_profile: false,
   get_tasks: true,
+  get_tasks_filtered: true,
   create_task: true,
   score_task: true,
   update_task: true,
@@ -152,8 +153,19 @@ const allTools = [
   {
     name: "get_tasks",
     description: t(
-      "Fetch user's tasks from Habitica. Optionally filter by task type (habits, dailys, todos, rewards). Returns all tasks if no type specified",
-      "Fetch user's tasks from Habitica. Optionally filter by task type (habits, dailys, todos, rewards). Returns all tasks if no type specified"
+      "Fetch all user's tasks from Habitica without any filtering",
+      "Fetch all user's tasks from Habitica without any filtering"
+    ),
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+  },
+  {
+    name: "get_tasks_filtered",
+    description: t(
+      "Fetch user's tasks from Habitica filtered by task type (habits, dailys, todos, rewards)",
+      "Fetch user's tasks from Habitica filtered by task type (habits, dailys, todos, rewards)"
     ),
     inputSchema: {
       type: "object",
@@ -167,6 +179,7 @@ const allTools = [
           ),
         },
       },
+      required: ["type"],
     },
   },
   {
@@ -1020,7 +1033,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return await getUserProfile();
 
       case "get_tasks":
-        return await getTasks(args.type);
+        return await getTasks();
+
+      case "get_tasks_filtered":
+        return await getTasksFiltered(args.type);
 
       case "create_task":
         return await createTask(args);
@@ -1117,8 +1133,21 @@ async function getUserProfile() {
   };
 }
 
-async function getTasks(type) {
-  const endpoint = type ? `/tasks/user?type=${type}` : "/tasks/user";
+async function getTasks() {
+  const response = await habiticaClient.get("/tasks/user");
+
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(response.data, null, 2),
+      },
+    ],
+  };
+}
+
+async function getTasksFiltered(type) {
+  const endpoint = `/tasks/user?type=${type}`;
   const response = await habiticaClient.get(endpoint);
 
   return {
